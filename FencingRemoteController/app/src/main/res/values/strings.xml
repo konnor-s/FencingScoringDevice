@@ -1,3 +1,6 @@
 <resources>
     <string name="app_name">FencingRemoteController</string>
+    <string name="mute">Mute</string>
+    <string name="timer1">1 Minute Timer</string>
+    <string name="timer3">3 Minute Timer</string>
 </resources>
