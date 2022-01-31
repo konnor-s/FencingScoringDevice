@@ -1,6 +1,8 @@
 package com.example.fencingremotecontroller;
 
 import androidx.appcompat.app.AppCompatActivity;
+
+import android.annotation.SuppressLint;
 import android.os.Bundle;
 import android.os.CountDownTimer;
 import android.view.View;
@@ -16,6 +18,7 @@ public class MainActivity extends AppCompatActivity {
     private TextView score2;
     private TextView time;
     private ToggleButton mute;
+    private CountDownTimer countDown;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -47,15 +50,19 @@ public class MainActivity extends AppCompatActivity {
         });
         decrement1.setOnClickListener(view -> {
             int score = Integer.parseInt(score1.getText().toString());
-            score -= 1;
-            score1.setText(String.valueOf(score));
-            //send new score via bluetooth
+            if (score > 0) {
+                score -= 1;
+                score1.setText(String.valueOf(score));
+                //send new score via bluetooth
+            }
         });
         decrement2.setOnClickListener(view -> {
             int score = Integer.parseInt(score2.getText().toString());
-            score -= 1;
-            score2.setText(String.valueOf(score));
-            //send new score via bluetooth
+            if (score > 0) {
+                score -= 1;
+                score2.setText(String.valueOf(score));
+                //send new score via bluetooth
+            }
         });
         mute.setOnClickListener(view -> {
             if (mute.getText().toString().equals("Mute")){
@@ -66,9 +73,13 @@ public class MainActivity extends AppCompatActivity {
             }
         });
         timer1.setOnClickListener(view -> {
-            new CountDownTimer(600000, 1000) {
-                private int minutes = 0;
-                private int seconds = 10;
+            try {
+                countDown.cancel();
+            } catch(NullPointerException ignored){            }
+
+            countDown = new CountDownTimer(600000, 1000) {
+                private int minutes = 1;
+                private int seconds = 0;
                 public void onTick(long millis) {
                     if (seconds == 0){
                         if (minutes !=0){
@@ -80,7 +91,7 @@ public class MainActivity extends AppCompatActivity {
                         seconds -= 1;
                     }
 
-                    String min_sec = String.format("%02d:%02d",
+                    @SuppressLint("DefaultLocale") String min_sec = String.format("%02d:%02d",
                             minutes, seconds);
 
                     time.setText(String.valueOf(min_sec));
@@ -93,9 +104,13 @@ public class MainActivity extends AppCompatActivity {
             //send signal to reset clock via bluetooth
         });
         timer3.setOnClickListener(view -> {
-            new CountDownTimer(1800000, 1000) {
-                private int minutes = 0;
-                private int seconds = 10;
+            try {
+                countDown.cancel();
+            } catch(NullPointerException ignored){            }
+
+            countDown = new CountDownTimer(1800000, 1000) {
+                private int minutes = 3;
+                private int seconds = 0;
                 public void onTick(long millis) {
                     if (seconds == 0){
                         if (minutes !=0){
@@ -107,7 +122,7 @@ public class MainActivity extends AppCompatActivity {
                         seconds -= 1;
                     }
 
-                    String min_sec = String.format("%02d:%02d",
+                    @SuppressLint("DefaultLocale") String min_sec = String.format("%02d:%02d",
                             minutes, seconds);
 
                     time.setText(String.valueOf(min_sec));
