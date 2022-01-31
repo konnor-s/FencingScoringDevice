@@ -1,6 +1,16 @@
 <resources>
     <string name="app_name">FencingRemoteController</string>
     <string name="mute">Mute</string>
+    <string name="unmute">Unmute</string>
     <string name="timer1">1 Minute Timer</string>
     <string name="timer3">3 Minute Timer</string>
+    <string name="increment1">increment1</string>
+    <string name="decrement1">decrement1</string>
+    <string name="increment2">increment2</string>
+    <string name="decrement2">decrement2</string>
+    <string name="score1">0</string>
+    <string name="score2">0</string>
+    <string name="time">00:00</string>
+    <string name="penalty"></string>
+    <string name="lknlk">00:00</string>
 </resources>
