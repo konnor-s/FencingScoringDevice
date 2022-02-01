@@ -3,10 +3,12 @@ package com.example.fencingremotecontroller;
 import androidx.appcompat.app.AppCompatActivity;
 
 import android.annotation.SuppressLint;
+import android.graphics.Color;
 import android.os.Bundle;
 import android.os.CountDownTimer;
 import android.view.View;
 import android.widget.Button;
+import android.widget.CompoundButton;
 import android.widget.ImageButton;
 import android.widget.TextView;
 import android.widget.ToggleButton;
@@ -19,12 +21,14 @@ public class MainActivity extends AppCompatActivity {
     private TextView time;
     private ToggleButton mute;
     private CountDownTimer countDown;
+    private ToggleButton yellow1;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
+        yellow1 = findViewById(R.id.yellow1);
         score1 = findViewById(R.id.score1);
         score2 = findViewById(R.id.score2);
         time = findViewById(R.id.time);
@@ -36,6 +40,16 @@ public class MainActivity extends AppCompatActivity {
         Button timer1 = findViewById(R.id.timer1);
         Button timer3 = findViewById(R.id.timer3);
 
+        yellow1.setOnCheckedChangeListener((a,b) -> {
+            if (yellow1.isChecked()) {
+                score1.setText("checked");
+                yellow1.setBackgroundColor(Color.parseColor("#FAEE84"));
+            }
+            else {
+                score1.setText("unchecked");
+                yellow1.setBackgroundColor(Color.parseColor("#FFFFE5"));
+            }
+        });
         increment1.setOnClickListener(view -> {
             int score = Integer.parseInt(score1.getText().toString());
             score += 1;
@@ -94,7 +108,7 @@ public class MainActivity extends AppCompatActivity {
                     @SuppressLint("DefaultLocale") String min_sec = String.format("%02d:%02d",
                             minutes, seconds);
 
-                    time.setText(String.valueOf(min_sec));
+                    time.setText(min_sec);
                 }
 
                 public void onFinish() {
@@ -125,7 +139,7 @@ public class MainActivity extends AppCompatActivity {
                     @SuppressLint("DefaultLocale") String min_sec = String.format("%02d:%02d",
                             minutes, seconds);
 
-                    time.setText(String.valueOf(min_sec));
+                    time.setText(min_sec);
                 }
 
                 public void onFinish() {
