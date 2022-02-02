@@ -4,16 +4,64 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="#FFFFFF"
+    android:background="#E8CDFF"
     tools:context=".MainActivity">
 
     <ToggleButton
+        android:id="@+id/black2"
+        android:layout_width="50dp"
+        android:layout_height="50dp"
+        android:layout_marginTop="48dp"
+        android:layout_marginEnd="16dp"
+        android:background="#D8D8D8"
+        android:textOff="@string/penalty"
+        android:textOn="@string/penalty"
+        app:layout_constraintEnd_toStartOf="@+id/red2"
+        app:layout_constraintTop_toBottomOf="@+id/decrement1" />
+
+    <ToggleButton
+        android:id="@+id/black1"
+        android:layout_width="50dp"
+        android:layout_height="50dp"
+        android:layout_marginStart="16dp"
+        android:layout_marginTop="48dp"
+        android:background="#D8D8D8"
+        android:textOff="@string/penalty"
+        android:textOn="@string/penalty"
+        app:layout_constraintStart_toEndOf="@+id/red1"
+        app:layout_constraintTop_toBottomOf="@+id/decrement1" />
+
+    <ToggleButton
+        android:id="@+id/red2"
+        android:layout_width="50dp"
+        android:layout_height="50dp"
+        android:layout_marginTop="48dp"
+        android:layout_marginEnd="12dp"
+        android:background="#FFCECE"
+        android:textOff="@string/penalty"
+        android:textOn="@string/penalty"
+        app:layout_constraintEnd_toStartOf="@+id/yellow2"
+        app:layout_constraintTop_toBottomOf="@+id/decrement1" />
+
+    <ToggleButton
+        android:id="@+id/red1"
+        android:layout_width="50dp"
+        android:layout_height="50dp"
+        android:layout_marginStart="12dp"
+        android:layout_marginTop="48dp"
+        android:background="#FFCECE"
+        android:textOff="@string/penalty"
+        android:textOn="@string/penalty"
+        app:layout_constraintStart_toEndOf="@+id/yellow1"
+        app:layout_constraintTop_toBottomOf="@+id/decrement1" />
+
+    <ToggleButton
         android:id="@+id/yellow2"
-        android:layout_width="60dp"
-        android:layout_height="60dp"
+        android:layout_width="50dp"
+        android:layout_height="50dp"
         android:layout_marginTop="48dp"
         android:layout_marginEnd="8dp"
-        android:backgroundTint="#FFEB3B"
+        android:background="#FBFBCE"
         android:textOff="@string/penalty"
         android:textOn="@string/penalty"
         app:layout_constraintEnd_toEndOf="parent"
@@ -119,11 +167,11 @@
 
     <ToggleButton
         android:id="@+id/yellow1"
-        android:layout_width="60dp"
-        android:layout_height="60dp"
+        android:layout_width="50dp"
+        android:layout_height="50dp"
         android:layout_marginStart="8dp"
         android:layout_marginTop="48dp"
-        android:background="#FAEE84"
+        android:background="#FBFBCE"
         android:textOff="@string/penalty"
         android:textOn="@string/penalty"
         app:layout_constraintStart_toStartOf="parent"

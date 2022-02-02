@@ -1,19 +1,14 @@
 package com.example.fencingremotecontroller;
 
 import androidx.appcompat.app.AppCompatActivity;
-
 import android.annotation.SuppressLint;
 import android.graphics.Color;
 import android.os.Bundle;
 import android.os.CountDownTimer;
-import android.view.View;
 import android.widget.Button;
-import android.widget.CompoundButton;
 import android.widget.ImageButton;
 import android.widget.TextView;
 import android.widget.ToggleButton;
-
-import java.util.concurrent.TimeUnit;
 
 public class MainActivity extends AppCompatActivity {
     private TextView score1;
@@ -22,6 +17,11 @@ public class MainActivity extends AppCompatActivity {
     private ToggleButton mute;
     private CountDownTimer countDown;
     private ToggleButton yellow1;
+    private ToggleButton yellow2;
+    private ToggleButton red1;
+    private ToggleButton red2;
+    private ToggleButton black1;
+    private ToggleButton black2;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -29,6 +29,11 @@ public class MainActivity extends AppCompatActivity {
         setContentView(R.layout.activity_main);
 
         yellow1 = findViewById(R.id.yellow1);
+        yellow2 = findViewById(R.id.yellow2);
+        red1 = findViewById(R.id.red1);
+        red2 = findViewById(R.id.red2);
+        black1 = findViewById(R.id.black1);
+        black2 = findViewById(R.id.black2);
         score1 = findViewById(R.id.score1);
         score2 = findViewById(R.id.score2);
         time = findViewById(R.id.time);
@@ -42,12 +47,50 @@ public class MainActivity extends AppCompatActivity {
 
         yellow1.setOnCheckedChangeListener((a,b) -> {
             if (yellow1.isChecked()) {
-                score1.setText("checked");
-                yellow1.setBackgroundColor(Color.parseColor("#FAEE84"));
+                yellow1.setBackgroundColor(Color.parseColor("#FFFF00"));
             }
             else {
-                score1.setText("unchecked");
-                yellow1.setBackgroundColor(Color.parseColor("#FFFFE5"));
+                yellow1.setBackgroundColor(Color.parseColor("#FBFBCE"));
+            }
+        });
+        yellow2.setOnCheckedChangeListener((a,b) -> {
+            if (yellow2.isChecked()) {
+                yellow2.setBackgroundColor(Color.parseColor("#FFFF00"));
+            }
+            else {
+                yellow2.setBackgroundColor(Color.parseColor("#FBFBCE"));
+            }
+        });
+        red1.setOnCheckedChangeListener((a,b) -> {
+            if (red1.isChecked()) {
+                red1.setBackgroundColor(Color.parseColor("#FF0000"));
+            }
+            else {
+                red1.setBackgroundColor(Color.parseColor("#FFCECE"));
+            }
+        });
+        red2.setOnCheckedChangeListener((a,b) -> {
+            if (red2.isChecked()) {
+                red2.setBackgroundColor(Color.parseColor("#FF0000"));
+            }
+            else {
+                red2.setBackgroundColor(Color.parseColor("#FFCECE"));
+            }
+        });
+        black1.setOnCheckedChangeListener((a,b) -> {
+            if (black1.isChecked()) {
+                black1.setBackgroundColor(Color.parseColor("#000000"));
+            }
+            else {
+                black1.setBackgroundColor(Color.parseColor("#D8D8D8"));
+            }
+        });
+        black2.setOnCheckedChangeListener((a,b) -> {
+            if (black2.isChecked()) {
+                black2.setBackgroundColor(Color.parseColor("#000000"));
+            }
+            else {
+                black2.setBackgroundColor(Color.parseColor("#D8D8D8"));
             }
         });
         increment1.setOnClickListener(view -> {
