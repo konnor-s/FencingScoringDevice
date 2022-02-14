@@ -4,8 +4,11 @@
     <option name="filePathToZoomLevelMap">
       <map>
         <entry key="..\:/Users/somme/AndroidStudioProjects/FencingRemoteController/app/src/main/res/layout/activity_main.xml" value="0.5588541666666667" />
-        <entry key="..\:/Users/somme/Documents/GitHub/FencingScoringDevice/FencingRemoteController/app/src/main/res/layout/activity_main.xml" value="0.4466666666666667" />
-        <entry key="..\:/Users/tuohe/Desktop/hw2021~2022/design/Fensing_Scoring/FencingScoringDevice/FencingRemoteController/app/src/main/res/layout/activity_main.xml" value="0.22" />
+
+        <entry key="..\:/Users/somme/Documents/GitHub/FencingScoringDevice/FencingRemoteController/app/src/main/res/layout/activity_main.xml" value="0.33" />
+        <entry key="..\:/Users/somme/Documents/GitHub/FencingScoringDevice/FencingRemoteController/app/src/main/res/layout/activity_select_device.xml" value="0.1" />
+        <entry key="..\:/Users/somme/Documents/GitHub/FencingScoringDevice/FencingRemoteController/app/src/main/res/layout/device_info_layout.xml" value="0.1" />
+
       </map>
     </option>
   </component>

@@ -40,6 +40,10 @@ int VOLUME = 19; //if we need an ADC input from the potentiometer to control the
  *The apparatus registers when contact is established between the wires forming the circuit in
   the épée, thus completing the circuit.
  *
+ *B is hot
+ *
+ *
+ *
  *Sabre:
  *In Sabre, similarly to Foil, the A line is connected to the lamé, but both the B and C lines are connected to the body of the weapon. 
  *Any contact between the B/C line (doesn't matter which, as they are always connected) and the opponent's A line (their lamé) results in a valid touch. 
