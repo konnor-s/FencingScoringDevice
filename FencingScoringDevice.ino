@@ -1,17 +1,3 @@
-#define DECODE_NEC
-#include <IRremote.hpp>
-
-int IR_RECV = 7;
-
-int YELLOW1 = 23;
-int RED1 = 24;
-int BLACK1 = 25;
-int YELLOW2 = 26;
-int RED2 = 27;
-int BLACK2 = 28;
-
-int VOLUME = 19; //if we need an ADC input from the potentiometer to control the speaker volume
-
 /*
  * The body cord has 3 prongs: A, B, and C.
  * A and B are closer together than B and C.
@@ -59,22 +45,47 @@ int VOLUME = 19; //if we need an ADC input from the potentiometer to control the
  *
  *
   */
- 
- 
- /
 
+#define DECODE_NEC
+#include <IRremote.hpp>
+#include <SoftwareSerial.h>
 
+int IR_RECV = 7;
 
+int YELLOW1 = 23;
+int RED1 = 24;
+int BLACK1 = 25;
+int YELLOW2 = 26;
+int RED2 = 27;
+int BLACK2 = 28;
+
+int VOLUME = 19; //if we need an ADC input from the potentiometer to control the speaker volume
 int FENCER1 = 4;
 int FENCER2 = 5;
 
-void setup(){     
-  Serial.begin(9600);     
+SoftwareSerial hc06(2,3); //Tx=2, Rx=3
+
+void setup(){    
+  Serial.begin(9600);      
+  hc06.begin(9600);
   IrReceiver.begin(IR_RECV, ENABLE_LED_FEEDBACK);    
 }    
 void loop(){ 
-  if (IrReceiver.decode()){    
-   Serial.println(IrReceiver.decodedIRData.decodedRawData, HEX);    
-   IrReceiver.resume();   
-  }     
+  if (IrReceiver.decode()){ 
+    //IrReceiver.printIRResultShort(&Serial);
+    Serial.println(IrReceiver.decodedIRData.decodedRawData, HEX);
+    if (IrReceiver.decodedIRData.decodedRawData == 0xBA45FF00){
+      hc06.write("Hello from your Arduino!\n");
+      Serial.println("message sent");
+    }
+     //
+     IrReceiver.resume();   
+  }   
+   
+  if (hc06.available()){
+    Serial.write(hc06.read());
+  }
+  if (Serial.available()){
+    hc06.write(Serial.read());
+  }   
 }

@@ -60,6 +60,8 @@ public class MainActivity extends AppCompatActivity {
     private ToggleButton red2;
     private ToggleButton black1;
     private ToggleButton black2;
+    private TextView mode;
+    private ToggleButton onoff;
 
 
     // Function to check and request permission
@@ -94,6 +96,8 @@ public class MainActivity extends AppCompatActivity {
         score2 = findViewById(R.id.score2);
         time = findViewById(R.id.time);
         mute = findViewById(R.id.mute);
+        mode = findViewById(R.id.mode);
+        onoff = findViewById(R.id.onoff);
         ImageButton increment1 = findViewById(R.id.increment1);
         ImageButton decrement1 = findViewById(R.id.decrement1);
         ImageButton increment2 = findViewById(R.id.increment2);
@@ -146,17 +150,9 @@ public class MainActivity extends AppCompatActivity {
 
                     case MESSAGE_READ:
                         String arduinoMsg = msg.obj.toString(); // Read message from Arduino
-                        switch (arduinoMsg.toLowerCase()) {
-                            case "led is turned on":
-                                //imageView.setBackgroundColor(getResources().getColor(R.color.colorOn));
-                                //textViewInfo.setText("Arduino Message : " + arduinoMsg);
-                                break;
-                            case "led is turned off":
-                                //imageView.setBackgroundColor(getResources().getColor(R.color.colorOff));
-                                //textViewInfo.setText("Arduino Message : " + arduinoMsg);
-                                break;
-                        }
+                        mode.setText(arduinoMsg);
                         break;
+
                 }
             }
         };
@@ -170,30 +166,32 @@ public class MainActivity extends AppCompatActivity {
                 startActivity(intent);
             }
         });
-    /*
-        // Button to ON/OFF LED on Arduino Board
-        buttonToggle.setOnClickListener(new View.OnClickListener() {
+
+
+        onoff.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
                 String cmdText = null;
-                String btnState = buttonToggle.getText().toString().toLowerCase();
-                switch (btnState){
-                    case "turn on":
-                        buttonToggle.setText("Turn Off");
+                String btnState = onoff.getText().toString().toLowerCase();
+                /*switch (btnState){
+                    case "On":
+                        onoff.setText("Off");
                         // Command to turn on LED on Arduino. Must match with the command in Arduino code
                         cmdText = "<turn on>";
                         break;
-                    case "turn off":
-                        buttonToggle.setText("Turn On");
+                    case "Off":
+                        onoff.setText("On");
                         // Command to turn off LED on Arduino. Must match with the command in Arduino code
                         cmdText = "<turn off>";
                         break;
                 }
                 // Send command to Arduino board
-                connectedThread.write(cmdText);
+                */
+
+                connectedThread.write("Hello");
             }
         });
-*/
+
 
         yellow1.setOnCheckedChangeListener((a, b) -> {
             if (yellow1.isChecked()) {
@@ -427,6 +425,7 @@ public class MainActivity extends AppCompatActivity {
         }
 
         public void run() {
+            Log.e("Status", "Connected Thread started");
             byte[] buffer = new byte[1024];  // buffer store for the stream
             int bytes = 0; // bytes returned from read()
             // Keep listening to the InputStream until an exception occurs
@@ -438,6 +437,7 @@ public class MainActivity extends AppCompatActivity {
                      */
                     buffer[bytes] = (byte) mmInStream.read();
                     String readMessage;
+
                     if (buffer[bytes] == '\n') {
                         readMessage = new String(buffer, 0, bytes);
                         Log.e("Arduino Message", readMessage);
@@ -445,6 +445,7 @@ public class MainActivity extends AppCompatActivity {
                         bytes = 0;
                     } else {
                         bytes++;
+
                     }
                 } catch (IOException e) {
                     e.printStackTrace();
@@ -458,6 +459,7 @@ public class MainActivity extends AppCompatActivity {
             byte[] bytes = input.getBytes(); //converts entered String into bytes
             try {
                 mmOutStream.write(bytes);
+                Log.i("Hey", "message sent");
             } catch (IOException e) {
                 Log.e("Send Error", "Unable to send message", e);
             }
@@ -472,18 +474,6 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
-    /* ============================ Terminate Connection at BackPress ====================== */
-    @Override
-    public void onBackPressed() {
-        // Terminate Bluetooth Connection and close app
-        if (createConnectThread != null) {
-            createConnectThread.cancel();
-        }
-        Intent a = new Intent(Intent.ACTION_MAIN);
-        a.addCategory(Intent.CATEGORY_HOME);
-        a.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-        startActivity(a);
-    }
 }
 
 
