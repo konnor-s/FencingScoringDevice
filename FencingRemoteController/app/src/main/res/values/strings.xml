@@ -11,7 +11,11 @@
     <string name="score1">0</string>
     <string name="score2">0</string>
     <string name="time">00:00</string>
-    <string name="penalty"></string>
-    <string name="lknlk">00:00</string>
     <string name="onoff">onoff</string>
+    <string name="Foil">Foil</string>
+    <string name="Epee">Epee</string>
+    <string name="Sabre">Sabre</string>
+    <string name="connect">Connect</string>
+    <string name="mode">Mode:</string>
+    <string name="penalty"></string>
 </resources>
