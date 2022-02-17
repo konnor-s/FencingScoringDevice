@@ -62,6 +62,7 @@ public class MainActivity extends AppCompatActivity {
     private ToggleButton black2;
     private TextView mode;
     private ToggleButton onoff;
+    private Button modeButton;
 
 
     // Function to check and request permission
@@ -104,7 +105,7 @@ public class MainActivity extends AppCompatActivity {
         ImageButton decrement2 = findViewById(R.id.decrement2);
         Button timer1 = findViewById(R.id.timer1);
         Button timer3 = findViewById(R.id.timer3);
-
+        modeButton = findViewById(R.id.modeButton);
         // If a bluetooth device has been selected from SelectDeviceActivity
         deviceName = getIntent().getStringExtra("deviceName");
         if (deviceName != null) {
@@ -184,7 +185,27 @@ public class MainActivity extends AppCompatActivity {
                 }
             }
         };
-
+        modeButton.setOnClickListener( new View.OnClickListener() {
+            @Override
+            public void onClick(View view)
+            {
+                if (mode.getText().equals("Foil"))
+                {
+                    connectedThread.write("foil\n");
+                    mode.setText("Epee");
+                }
+                else if (mode.getText().equals("Epee"))
+                {
+                    connectedThread.write("epee\n");
+                    mode.setText("Sabre");
+                }
+                else if (mode.getText().equals("Sabre"))
+                {
+                    connectedThread.write("sabre\n");
+                    mode.setText("Foil");
+                }
+            }
+        });
         // Select Bluetooth Device
         buttonConnect.setOnClickListener(new View.OnClickListener() {
             @Override
