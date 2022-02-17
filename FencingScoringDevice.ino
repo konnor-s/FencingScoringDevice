@@ -63,13 +63,77 @@ int VOLUME = 19; //if we need an ADC input from the potentiometer to control the
 int FENCER1 = 4;
 int FENCER2 = 5;
 
+struct State {
+  int score1 = 0;
+  int score2 = 0;
+  String mode = "foil";
+  int muted = 0;
+} state;
+
 SoftwareSerial hc06(2, 3); //Tx=2, Rx=3
 
 void parseCommand(String cmd){
-  if (cmd == "inc1"){
-    
+  if (cmd == "inc1\n" || cmd == "f708ff00"){
+    state.score1 += 1;
+    Serial.println("inc1");
+    if (cmd == "f708ff00"){
+      hc06.write("inc1\n");
+    }
+  }
+  else if (cmd == "inc2\n" || cmd == "a55aff00"){
+    state.score2 += 1;
+    Serial.println("inc2");
+  }
+  else if (cmd == "dec1\n" || cmd == "bd42ff00"){
+    state.score1 -= 1;
+    Serial.println("dec1");
+  }
+  else if (cmd == "dec2\n" || cmd == "b54aff00"){
+    state.score2 -= 1;
+    Serial.println("dec2");
+  }
+  else if (cmd == "mute\n" || cmd == "b847ff00"){
+    if (state.muted == 1){
+      state.muted == 0;
+    }
+    else {
+      state.muted == 1;
+    }
+    Serial.println("mute");
+  }
+ 
+  else if (cmd == "timer1\n" || cmd == "f30cff00"){
+    Serial.println("timer1");
+  }
+  else if (cmd == "timer3\n" || cmd == "a15eff00"){
+    Serial.println("timer3");
+  }
+  else if (cmd == "foil\n"){
+    state.mode = "foil";
+    Serial.println("foil");
+  }
+  else if (cmd == "epee\n"){
+    state.mode = "epee";
+    Serial.println("epee");
+  }
+  else if (cmd == "sabre\n"){
+    state.mode = "sabre";
+    Serial.println("sabre");
+  }
+  else if (cmd == "mode" || cmd == "b946ff00"){
+    Serial.println("mode");
+    if (state.mode == "foil"){
+      state.mode = "epee";
+    }
+    else if (state.mode == "epee"){
+      state.mode = "sabre";
+    }
+    else {
+      state.mode = "foil";
+    }
   }
 }
+
 void setup() {
   Serial.begin(9600);
   hc06.begin(9600);
@@ -78,10 +142,10 @@ void setup() {
 void loop() {
   if (IrReceiver.decode()) {
     //IrReceiver.printIRResultShort(&Serial);
-    Serial.println(IrReceiver.decodedIRData.decodedRawData, HEX);
-    if (IrReceiver.decodedIRData.decodedRawData == 0xBA45FF00) {
-      hc06.write("Hello from your Arduino!\n");
-    }
+    
+    String cmd(IrReceiver.decodedIRData.decodedRawData, HEX);
+    parseCommand(cmd);
+    Serial.println(cmd);
     //
     IrReceiver.resume();
   }
@@ -97,11 +161,8 @@ void loop() {
           for (int i = 0; i<=index; i++) {
             cmd[i] = buffer[i];
           }
-          cmd[index+1] = '\0';
-          Serial.println(cmd);
-          //Serial.println(str.length());
-          //Serial.println(index);
-         // parseCommand(cmd);
+          cmd[index+1] = '\0'; //cmd is a char array with a \n and \0 as the last 2 chars, to make it a string          
+          parseCommand(cmd);
           index = 10;//exit
         }
         else {
