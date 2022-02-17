@@ -108,11 +108,8 @@ public class MainActivity extends AppCompatActivity {
         // If a bluetooth device has been selected from SelectDeviceActivity
         deviceName = getIntent().getStringExtra("deviceName");
         if (deviceName != null) {
-            // Get the device address to make BT Connection
             deviceAddress = getIntent().getStringExtra("deviceAddress");
-            // Show progree and connection status
             toolbar.setSubtitle("Connecting to " + deviceName + "...");
-            //progressBar.setVisibility(View.VISIBLE);
             buttonConnect.setEnabled(false);
 
             /*
@@ -136,13 +133,10 @@ public class MainActivity extends AppCompatActivity {
                         switch (msg.arg1) {
                             case 1:
                                 toolbar.setSubtitle("Connected to " + deviceName);
-                                //progressBar.setVisibility(View.GONE);
                                 buttonConnect.setEnabled(true);
-                                //buttonToggle.setEnabled(true);
                                 break;
                             case -1:
                                 toolbar.setSubtitle("Device fails to connect");
-                                //progressBar.setVisibility(View.GONE);
                                 buttonConnect.setEnabled(true);
                                 break;
                         }
@@ -151,6 +145,40 @@ public class MainActivity extends AppCompatActivity {
                     case MESSAGE_READ:
                         String arduinoMsg = msg.obj.toString(); // Read message from Arduino
                         mode.setText(arduinoMsg);
+                        switch (arduinoMsg) {
+                            case "inc1": {
+                                int newScore = Integer.parseInt(score1.getText().toString()) + 1;
+                                score1.setText(newScore);
+                                break;
+                            }
+                            case "inc2": {
+                                int newScore = Integer.parseInt(score2.getText().toString()) + 1;
+                                score1.setText(newScore);
+                                break;
+                            }
+                            case "dec1": {
+                                int newScore = Integer.parseInt(score1.getText().toString()) - 1;
+                                score1.setText(newScore);
+                                break;
+                            }
+                            case "dec2": {
+                                int newScore = Integer.parseInt(score2.getText().toString()) - 1;
+                                score1.setText(newScore);
+                                break;
+                            }
+                            case "foil": {
+                                mode.setText("Foil");
+                                break;
+                            }
+                            case "epee": {
+                                mode.setText("Epee");
+                                break;
+                            }
+                            case "sabre": {
+                                mode.setText("Sabre");
+                                break;
+                            }
+                        }
                         break;
 
                 }
@@ -171,24 +199,8 @@ public class MainActivity extends AppCompatActivity {
         onoff.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                String cmdText = null;
                 String btnState = onoff.getText().toString().toLowerCase();
-                /*switch (btnState){
-                    case "On":
-                        onoff.setText("Off");
-                        // Command to turn on LED on Arduino. Must match with the command in Arduino code
-                        cmdText = "<turn on>";
-                        break;
-                    case "Off":
-                        onoff.setText("On");
-                        // Command to turn off LED on Arduino. Must match with the command in Arduino code
-                        cmdText = "<turn off>";
-                        break;
-                }
-                // Send command to Arduino board
-                */
-
-                connectedThread.write("Hello");
+                connectedThread.write("Hello\n");
             }
         });
 
@@ -239,20 +251,21 @@ public class MainActivity extends AppCompatActivity {
             int score = Integer.parseInt(score1.getText().toString());
             score += 1;
             score1.setText(String.valueOf(score));
-            //send new score via bluetooth
+            connectedThread.write("inc1\n");
+
         });
         increment2.setOnClickListener(view -> {
             int score = Integer.parseInt(score2.getText().toString());
             score += 1;
             score2.setText(String.valueOf(score));
-            //send new score via bluetooth
+            connectedThread.write("inc2\n");
         });
         decrement1.setOnClickListener(view -> {
             int score = Integer.parseInt(score1.getText().toString());
             if (score > 0) {
                 score -= 1;
                 score1.setText(String.valueOf(score));
-                //send new score via bluetooth
+                connectedThread.write("dec1\n");
             }
         });
         decrement2.setOnClickListener(view -> {
@@ -260,14 +273,14 @@ public class MainActivity extends AppCompatActivity {
             if (score > 0) {
                 score -= 1;
                 score2.setText(String.valueOf(score));
-                //send new score via bluetooth
+                connectedThread.write("dec2\n");
             }
         });
         mute.setOnClickListener(view -> {
             if (mute.getText().toString().equals("Mute")) {
-                //mute via bluetooth
+                connectedThread.write("mute\n");
             } else {
-                //unmute via bluetooth
+                connectedThread.write("unmute");
             }
         });
         timer1.setOnClickListener(view -> {
@@ -294,13 +307,14 @@ public class MainActivity extends AppCompatActivity {
                             minutes, seconds);
 
                     time.setText(min_sec);
+
                 }
 
                 public void onFinish() {
                     time.setText(R.string.time);
                 }
             }.start();
-            //send signal to reset clock via bluetooth
+            connectedThread.write("timer1\n");
         });
         timer3.setOnClickListener(view -> {
             try {
@@ -332,7 +346,7 @@ public class MainActivity extends AppCompatActivity {
                     time.setText(R.string.time);
                 }
             }.start();
-            //send signal to reset clock via bluetooth
+            connectedThread.write("timer3\n");
         });
     }
 
