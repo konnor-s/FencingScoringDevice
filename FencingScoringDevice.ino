@@ -46,54 +46,96 @@
 
 */
 
+#define USE_TIMER_1 true
 #define DECODE_NEC
 #include <IRremote.hpp>
 #include <SoftwareSerial.h>
+#include "TimerInterrupt.h"
+#define TIMER_INTERVAL_MS 1000
 
-int IR_RECV = 7;
+#define IR_RECV 7
 
-int YELLOW1 = 23;
-int RED1 = 24;
-int BLACK1 = 25;
-int YELLOW2 = 26;
-int RED2 = 27;
-int BLACK2 = 28;
+#define FENCER1  4
+#define FENCER2  5
+#define GREEN 8
+#define RED 9
+#define WHITE1 10
+#define WHITE2 11
+#define SCORE1 12
+#define SCORE2 13
+#define BUZZER 14
 
-int VOLUME = 19; //if we need an ADC input from the potentiometer to control the speaker volume
-int FENCER1 = 4;
-int FENCER2 = 5;
+int currentTime = 0;
 
 struct State {
   int score1 = 0;
   int score2 = 0;
   String mode = "foil";
-  int muted = 0;
+  boolean muted = false;
+  boolean buzzerOn = false;
+  int buzzerStartTime = 0;
 } state;
 
 SoftwareSerial hc06(2, 3); //Tx=2, Rx=3
 
-void parseCommand(String cmd){
-  if (cmd == "inc1\n" || cmd == "f708ff00"){
+void TimerHandler() {
+  if (currentTime > 0) {
+    currentTime -= 1;
+    writeTime();
+  }
+}
+void writeScore(int player, int score){
+  //write to either SCORE1 or SCORE2 with state.score1/2
+}
+void writeTime(){
+  //write currentTime to the timer LEDs
+}
+void soundBuzzer(){
+  if (state.muted == false){
+    digitalWrite(BUZZER, HIGH);   
+    state.buzzerOn = true;
+    state.buzzerStartTime = millis(); 
+  }
+}
+void parseCommand(String cmd) {
+  if (cmd == "inc1\n" || cmd == "f708ff00") {
     state.score1 += 1;
+    //write new score to SCORE1
     Serial.println("inc1");
-    if (cmd == "f708ff00"){
+    if (cmd == "f708ff00") {
       hc06.write("inc1\n");
     }
   }
-  else if (cmd == "inc2\n" || cmd == "a55aff00"){
+  else if (cmd == "inc2\n" || cmd == "a55aff00") {
     state.score2 += 1;
+    //write new score to SCORE2
     Serial.println("inc2");
+    if (cmd == "a55aff00") {
+      hc06.write("inc2\n");
+    }
   }
-  else if (cmd == "dec1\n" || cmd == "bd42ff00"){
-    state.score1 -= 1;
+  else if (cmd == "dec1\n" || cmd == "bd42ff00") {
+    if (state.score1 > 0) {
+      state.score1 -= 1;
+      //write new score to SCORE1
+    }
     Serial.println("dec1");
+    if (cmd == "bd42ff00") {
+      hc06.write("dec1\n");
+    }
   }
-  else if (cmd == "dec2\n" || cmd == "b54aff00"){
-    state.score2 -= 1;
+  else if (cmd == "dec2\n" || cmd == "b54aff00") {
+    if (state.score2 > 0) {
+      state.score2 -= 1;
+      //write new score to SCORE2
+    }
     Serial.println("dec2");
+    if (cmd == "b54aff00") {
+      hc06.write("dec2\n");
+    }
   }
-  else if (cmd == "mute\n" || cmd == "b847ff00"){
-    if (state.muted == 1){
+  else if (cmd == "mute\n" || cmd == "b847ff00") {
+    if (state.muted == 1) {
       state.muted == 0;
     }
     else {
@@ -101,55 +143,79 @@ void parseCommand(String cmd){
     }
     Serial.println("mute");
   }
- 
-  else if (cmd == "timer1\n" || cmd == "f30cff00"){
+
+  else if (cmd == "timer1\n" || cmd == "f30cff00") {
+    currentTime = 60;
     Serial.println("timer1");
+    if (cmd == "f30cff00") {
+      hc06.write("timer1\n");
+    }
   }
-  else if (cmd == "timer3\n" || cmd == "a15eff00"){
+  else if (cmd == "timer3\n" || cmd == "a15eff00") {
+    currentTime = 180;
     Serial.println("timer3");
+    if (cmd == "a15eff00") {
+      hc06.write("timer3\n");
+    }
   }
-  else if (cmd == "foil\n"){
+  else if (cmd == "foil\n") {
     state.mode = "foil";
     Serial.println("foil");
   }
-  else if (cmd == "epee\n"){
+  else if (cmd == "epee\n") {
     state.mode = "epee";
     Serial.println("epee");
   }
-  else if (cmd == "sabre\n"){
+  else if (cmd == "sabre\n") {
     state.mode = "sabre";
     Serial.println("sabre");
   }
-  else if (cmd == "mode" || cmd == "b946ff00"){
+  else if (cmd == "mode\n" || cmd == "b946ff00") {
     Serial.println("mode");
-    if (state.mode == "foil"){
+    if (state.mode == "foil") {
       state.mode = "epee";
     }
-    else if (state.mode == "epee"){
+    else if (state.mode == "epee") {
       state.mode = "sabre";
     }
     else {
       state.mode = "foil";
     }
+    if (cmd == "b946ff00") {
+      hc06.write("mode\n");
+    }
   }
 }
 
 void setup() {
+  pinMode(GREEN, OUTPUT);
+  pinMode(RED, OUTPUT);
+  pinMode(WHITE1, OUTPUT);
+  pinMode(WHITE2, OUTPUT);
+  
   Serial.begin(9600);
   hc06.begin(9600);
   IrReceiver.begin(IR_RECV, ENABLE_LED_FEEDBACK);
+  ITimer1.init();
+  ITimer1.attachInterruptInterval(TIMER_INTERVAL_MS, TimerHandler);
 }
 void loop() {
+  //Check if the buzzer should be turned off yet, 1 second must have elapsed
+  if (state.buzzerOn == true){ 
+    if (millis() -1000 > state.buzzerStartTime){
+      digitalWrite(BUZZER, LOW);
+      state.buzzerOn = false;
+    }
+  }
+  //Check if there is any IR data to decode
   if (IrReceiver.decode()) {
-    //IrReceiver.printIRResultShort(&Serial);
-    
     String cmd(IrReceiver.decodedIRData.decodedRawData, HEX);
     parseCommand(cmd);
     Serial.println(cmd);
     //
     IrReceiver.resume();
   }
-
+  //Check if there is any bluetooth data to decode
   if (hc06.available()) {
     char buffer[10];
     int index = 0;
@@ -157,11 +223,11 @@ void loop() {
       if (hc06.available()) {
         buffer[index] = hc06.read();
         if (buffer[index] == '\n') { //end of message
-          char cmd[index+2];
-          for (int i = 0; i<=index; i++) {
+          char cmd[index + 2];
+          for (int i = 0; i <= index; i++) {
             cmd[i] = buffer[i];
           }
-          cmd[index+1] = '\0'; //cmd is a char array with a \n and \0 as the last 2 chars, to make it a string          
+          cmd[index + 1] = '\0'; //cmd is a char array with a \n and \0 as the last 2 chars, to make it a string
           parseCommand(cmd);
           index = 10;//exit
         }
@@ -169,10 +235,6 @@ void loop() {
           index++;
         }
       }
-    }
-    if (Serial.available()) {
-      hc06.write(Serial.read());
-      Serial.println("message sent");
     }
   }
 }

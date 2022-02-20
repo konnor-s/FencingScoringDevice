@@ -20,4 +20,5 @@
     <string name="penalty"></string>
     <string name="on">On</string>
     <string name="off">Off</string>
+    <string name="switch_mode">Switch Mode</string>
 </resources>

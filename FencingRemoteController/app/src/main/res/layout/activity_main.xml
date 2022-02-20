@@ -48,11 +48,12 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@+id/textView5" />
 
+
     <TextView
         android:id="@+id/textView5"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginTop="16dp"
+        android:layout_marginTop="440dp"
         android:text="@string/mode"
         android:textAlignment="center"
         android:textColor="#000000"
@@ -60,67 +61,7 @@
         android:textStyle="bold"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/black1" />
-
-    <ToggleButton
-        android:id="@+id/black2"
-        android:layout_width="50dp"
-        android:layout_height="50dp"
-        android:layout_marginTop="48dp"
-        android:layout_marginEnd="16dp"
-        android:background="#D8D8D8"
-        android:textOff="@string/penalty"
-        android:textOn="@string/penalty"
-        app:layout_constraintEnd_toStartOf="@+id/red2"
-        app:layout_constraintTop_toBottomOf="@+id/decrement1" />
-
-    <ToggleButton
-        android:id="@+id/black1"
-        android:layout_width="50dp"
-        android:layout_height="50dp"
-        android:layout_marginStart="16dp"
-        android:layout_marginTop="48dp"
-        android:background="#D8D8D8"
-        android:textOff="@string/penalty"
-        android:textOn="@string/penalty"
-        app:layout_constraintStart_toEndOf="@+id/red1"
-        app:layout_constraintTop_toBottomOf="@+id/decrement1" />
-
-    <ToggleButton
-        android:id="@+id/red2"
-        android:layout_width="50dp"
-        android:layout_height="50dp"
-        android:layout_marginTop="48dp"
-        android:layout_marginEnd="12dp"
-        android:background="#FFCECE"
-        android:textOff="@string/penalty"
-        android:textOn="@string/penalty"
-        app:layout_constraintEnd_toStartOf="@+id/yellow2"
-        app:layout_constraintTop_toBottomOf="@+id/decrement1" />
-
-    <ToggleButton
-        android:id="@+id/red1"
-        android:layout_width="50dp"
-        android:layout_height="50dp"
-        android:layout_marginStart="12dp"
-        android:layout_marginTop="48dp"
-        android:background="#FFCECE"
-        android:textOff="@string/penalty"
-        android:textOn="@string/penalty"
-        app:layout_constraintStart_toEndOf="@+id/yellow1"
-        app:layout_constraintTop_toBottomOf="@+id/decrement1" />
-
-    <ToggleButton
-        android:id="@+id/yellow2"
-        android:layout_width="50dp"
-        android:layout_height="50dp"
-        android:layout_marginTop="48dp"
-        android:layout_marginEnd="8dp"
-        android:background="#FBFBCE"
-        android:textOff="@string/penalty"
-        android:textOn="@string/penalty"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/decrement2" />
+        app:layout_constraintTop_toTopOf="parent" />
 
     <ImageButton
         android:id="@+id/decrement2"
@@ -222,17 +163,6 @@
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintTop_toBottomOf="@+id/timer3" />
 
-    <ToggleButton
-        android:id="@+id/yellow1"
-        android:layout_width="50dp"
-        android:layout_height="50dp"
-        android:layout_marginStart="8dp"
-        android:layout_marginTop="48dp"
-        android:background="#FBFBCE"
-        android:textOff="@string/penalty"
-        android:textOn="@string/penalty"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/decrement1" />
 
     <ImageButton
         android:id="@+id/increment1"
@@ -279,11 +209,13 @@
         android:id="@+id/modeButton"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="Switch Mode"
+        android:text="@string/switch_mode"
         app:layout_constraintBottom_toBottomOf="@+id/textView5"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintHorizontal_bias="0.94"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/textView5" />
+        app:layout_constraintTop_toBottomOf="@+id/textView5"
+        android:textColor="#ffffff"
+        android:backgroundTint="#6120D3"/>
 
 </androidx.constraintlayout.widget.ConstraintLayout>
