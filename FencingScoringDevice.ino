@@ -88,13 +88,14 @@ void writeScore(int player, int score){
   //write to either SCORE1 or SCORE2 with state.score1/2
 }
 void writeTime(){
+  //Serial.println(currentTime);
   //write currentTime to the timer LEDs
 }
 void soundBuzzer(){
   if (state.muted == false){
     digitalWrite(BUZZER, HIGH);   
     state.buzzerOn = true;
-    state.buzzerStartTime = millis(); 
+    state.buzzerStartTime = millis();
   }
 }
 void parseCommand(String cmd) {
@@ -192,17 +193,20 @@ void setup() {
   pinMode(RED, OUTPUT);
   pinMode(WHITE1, OUTPUT);
   pinMode(WHITE2, OUTPUT);
+  pinMode(BUZZER, OUTPUT);
+  digitalWrite(BUZZER, LOW);
   
   Serial.begin(9600);
   hc06.begin(9600);
   IrReceiver.begin(IR_RECV, ENABLE_LED_FEEDBACK);
   ITimer1.init();
   ITimer1.attachInterruptInterval(TIMER_INTERVAL_MS, TimerHandler);
+  soundBuzzer();
 }
 void loop() {
   //Check if the buzzer should be turned off yet, 1 second must have elapsed
   if (state.buzzerOn == true){ 
-    if (millis() -1000 > state.buzzerStartTime){
+    if (millis() > state.buzzerStartTime + 1000){
       digitalWrite(BUZZER, LOW);
       state.buzzerOn = false;
     }
@@ -211,7 +215,7 @@ void loop() {
   if (IrReceiver.decode()) {
     String cmd(IrReceiver.decodedIRData.decodedRawData, HEX);
     parseCommand(cmd);
-    Serial.println(cmd);
+    //Serial.println(cmd);
     //
     IrReceiver.resume();
   }
