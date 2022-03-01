@@ -44,7 +44,8 @@ public class MainActivity extends AppCompatActivity {
     public static BluetoothSocket mmSocket;
     public static ConnectedThread connectedThread;
     public static CreateConnectThread createConnectThread;
-
+    public int minutesA;
+    public int secondsA;
     private final static int CONNECTING_STATUS = 1; // used in bluetooth handler to identify message status
     private final static int MESSAGE_READ = 2; // used in bluetooth handler to identify message update
     private static final int REQUEST_ENABLE_BT = 1;
@@ -56,7 +57,7 @@ public class MainActivity extends AppCompatActivity {
     private CountDownTimer countDown;
     private TextView mode;
     private ToggleButton onoff;
-
+    private Button playpause;
 
     // Function to check and request permission
     public void checkPermission(String permission, int requestCode) {
@@ -98,6 +99,7 @@ public class MainActivity extends AppCompatActivity {
         Button timer1 = findViewById(R.id.timer1);
         Button timer3 = findViewById(R.id.timer3);
         Button modeButton = findViewById(R.id.modeButton);
+        playpause = findViewById(R.id.playpauseButton);
         // If a bluetooth device has been selected from SelectDeviceActivity
         deviceName = getIntent().getStringExtra("deviceName");
         if (deviceName != null) {
@@ -319,6 +321,51 @@ public class MainActivity extends AppCompatActivity {
                 }
             } else {
                 openDeviceList();
+            }
+        });
+        playpause.setOnClickListener(view -> {
+            if (connectedThread != null && connectedThread.isConnected()) {
+                if (!countDown.toString().equals("00:00") && playpause.getText().equals("pause")) // timer is going
+                {
+                    countDown.cancel();
+                    connectedThread.write("pause\n");
+                    playpause.setText("play");
+                }
+                else if (!countDown.toString().equals("00:00") && playpause.getText().equals("play")) //timer is not going and is not at zero
+                {
+                    String timetxt = time.getText().toString();
+                    String [] parts = timetxt.split(":");
+                    minutesA = Integer.parseInt(parts[0]);
+                    secondsA = Integer.parseInt(parts[1]);
+                    int timeMillis = ((minutesA * 60 ) + secondsA) * 1000;
+
+                    countDown = new CountDownTimer(timeMillis, 1000) {
+                        @Override
+                        public void onTick(long l) {
+                            if (secondsA == 0) {
+                                if (minutesA != 0) {
+                                    secondsA = 59;
+                                    minutesA -= 1;
+                                }
+                            } else {
+                                secondsA -= 1;
+                            }
+
+                            @SuppressLint("DefaultLocale") String min_sec = String.format("%02d:%02d",
+                                    minutesA, secondsA);
+
+                            time.setText(min_sec);
+                        }
+
+                        @Override
+                        public void onFinish() {
+                            time.setText(R.string.time);
+                        }
+                    };
+                    countDown.start();
+                    connectedThread.write("play\n");
+                    playpause.setText("pause");
+                }
             }
         });
         timer1.setOnClickListener(view -> {
