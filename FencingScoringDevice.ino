@@ -48,15 +48,20 @@
 #define WEAPON_2_PINA A2  // Lame   B pin - Analog (Epee return path)
 #define WEAPON_2_PINB A3  // Weapon B pin - Analog
 
+#define FOIL 0
+#define EPEE 1
+#define SABRE 2
 
-//lockout is the amount of time after a hit to allow the other person to get a hit, before the round ends
-#define LOCKOUT_FOIL 300000
-#define LOCKOUT_EPEE 45000
-#define LOCKOUT_SABRE 120000
+
 //depress time is the amount of time needed to maintain valid contact for a hit to count
-#define DEPRESS_FOIL 14000
-#define DEPRESS_EPEE 2000
-#define DEPRESS_SABRE 1000
+const int depress [] = {300000, 45000, 120000}; //foil, epee, sabre
+//lockout is the amount of time after a hit to allow the other person to get a hit, before the round ends
+const int lockout [] = {14000, 2000, 1000};
+const int validVoltage [] = {510, 510, 330}; //its the same voltage for pin A and B on a valid hit
+const int offTargetVoltageA [] = {88, 330, 2000}; //sabre doesn't have off target
+const int offTargetVoltageB [] = {950, 330, 2000};
+//fudgi0 to 88 and 1023 to 950 since it checks +-89
+
 
 #define BUZZER_TIME 2000
 #define LIGHT_TIME 2000
@@ -67,7 +72,7 @@ int currentTime = 0;
 struct State {
   int score1 = 0;
   int score2 = 0;
-  String mode = "foil";
+  int mode = FOIL;
   boolean muted = false;
   boolean buzzerOn = false;
   long buzzerStartTime = 0;
@@ -145,21 +150,7 @@ void loop() {
 
 
 
-
-
-
-
-
-
-
-
-    //Check if the buzzer should be turned off yet, 1 second must have elapsed
-    if (state->buzzerOn == true) {
-      if (millis() > state->buzzerStartTime + 2000) {
-        digitalWrite(BUZZER, LOW);
-        state->buzzerOn = false;
-      }
-    }
+    
     //Check if there is any IR data to decode
     if (IrReceiver.decode()) {
       String cmd(IrReceiver.decodedIRData.decodedRawData, HEX);
@@ -198,33 +189,35 @@ void testBlades() {
 
   //check if lockout time is here
   //A hit has occurred, and the lockout duration has passed.
-  if (((weaponState->validHit1 || weaponState->offTarget1) && ((weaponState->depressTime1 + LOCKOUT_FOIL) < now)) ||
-      ((weaponState->validHit2 || weaponState->offTarget2) && (weaponState->depressTime2 + LOCKOUT_FOIL < now))) {
+  if (((weaponState->validHit1 || weaponState->offTarget1) && ((weaponState->depressTime1 + lockout[state->mode]) < now)) ||
+      ((weaponState->validHit2 || weaponState->offTarget2) && (weaponState->depressTime2 + lockout[state->mode] < now))) {
     weaponState->lockedOut = true;
   }
 
   // weapon 1
   if (weaponState->validHit1 == false && weaponState->offTarget1 == false) { // ignore if 1 has already hit
     // off target
-    if (900 < weaponState->weapon1_B && weaponState->weapon2_A < 100) { //weapon 1 and lame 2
+    if (offTargetVoltageB[state->mode]-89 < weaponState->weapon1_B && weaponState->weapon1_B < offTargetVoltageB[state->mode]+89 && 
+        offTargetVoltageA[state->mode]-89 < weaponState->weapon2_A && weaponState->weapon2_A < offTargetVoltageA[state->mode]+89) { //weapon 1 and lame 2
       if (!weaponState->depressed1) { //if weapon1 just got depressed
         weaponState->depressTime1 = micros();
         weaponState->depressed1   = true;
       }
       else {
-        if (weaponState->depressTime1 + DEPRESS_FOIL <= micros()) { //if it has been depressed for enough time, set as off-target hit
+        if (weaponState->depressTime1 + depress[state->mode] <= micros()) { //if it has been depressed for enough time, set as off-target hit
           weaponState->offTarget1 = true;
         }
       }
     }
-    else if (400 < weaponState->weapon2_B && weaponState->weapon2_B < 600 && 400 < weaponState->weapon1_A && weaponState->weapon1_A < 600) {
+    else if (validVoltage[state->mode]-89 < weaponState->weapon2_B && weaponState->weapon2_B < validVoltage[state->mode]+89 && 
+             validVoltage[state->mode]-89 < weaponState->weapon1_A && weaponState->weapon1_A < validVoltage+89) {
       // on target
       if (!weaponState->depressed1) {
         weaponState->depressTime1 = micros();
         weaponState->depressed1 = true;
       }
       else {
-        if (weaponState->depressTime1 + DEPRESS_FOIL <= micros()) {
+        if (weaponState->depressTime1 + depress[state->mode] <= micros()) {
           weaponState->validHit1 = true;
         }
       }
@@ -238,25 +231,28 @@ void testBlades() {
   // weapon 2
   if (weaponState->validHit2 == false && weaponState->offTarget2 == false) { // ignore if 2 has already hit
     // off target
-    if (900 < weaponState->weapon2_B && weaponState->weapon1_A < 100) { //weapon 2 and lame 1
+    if (offTargetVoltageB[state->mode]-89 < weaponState->weapon2_B && weaponState->weapon2_B < offTargetVoltageB[state->mode]+89 && 
+         offTargetVoltageA[state->mode]-89 < weaponState->weapon1_A && weaponState->weapon1_A < offTargetVoltageA[state->mode]+89){
+     
       if (!weaponState->depressed2) { //if weapon 2 just got depressed
         weaponState->depressTime2 = micros();
         weaponState->depressed2   = true;
       }
       else {
-        if (weaponState->depressTime2 + DEPRESS_FOIL <= micros()) { //if it has been depressed for enough time, set as off-target hit
+        if (weaponState->depressTime2 + depress[state->mode] <= micros()) { //if it has been depressed for enough time, set as off-target hit
           weaponState->offTarget2 = true;
         }
       }
     }
-    else if (400 < weaponState->weapon1_B && weaponState->weapon1_B < 600 && 400 < weaponState->weapon2_A && weaponState->weapon2_A < 600) {
+    else if (validVoltage[state->mode]-89 < weaponState->weapon1_B && weaponState->weapon1_B < validVoltage[state->mode]+89 && 
+             validVoltage[state->mode]-89 < weaponState->weapon2_A && weaponState->weapon2_A < validVoltage+89) {
       // on target
       if (!weaponState->depressed2) {
         weaponState->depressTime2 = micros();
         weaponState->depressed2 = true;
       }
       else {
-        if (weaponState->depressTime2 + DEPRESS_FOIL <= micros()) {
+        if (weaponState->depressTime2 + depress[state->mode] <= micros()) {
           weaponState->validHit2 = true;
         }
       }
@@ -279,12 +275,14 @@ void signalHit() {
       //sound buzzer
       
       if (weaponState->validHit1){
+        state->score1 = state->score1 + 1;
         //signal red light
       } 
       else if (weaponState->offTarget1){
         //signal left white
       }
       if (weaponState->validHit2){
+        state->score2 = state->score2 + 1;
         //signal green light
       }
       else if (weaponState->offTarget2){
@@ -373,27 +371,27 @@ void parseCommand(String cmd) {
     }
   }
   else if (cmd == "foil\n") {
-    state->mode = "foil";
+    state->mode = FOIL;
     Serial.println("foil");
   }
   else if (cmd == "epee\n") {
-    state->mode = "epee";
+    state->mode = EPEE;
     Serial.println("epee");
   }
   else if (cmd == "sabre\n") {
-    state->mode = "sabre";
+    state->mode = SABRE;
     Serial.println("sabre");
   }
   else if (cmd == "mode\n" || cmd == "b946ff00") {
     Serial.println("mode");
-    if (state->mode == "foil") {
-      state->mode = "epee";
+    if (state->mode == FOIL) {
+      state->mode = EPEE;
     }
-    else if (state->mode == "epee") {
-      state->mode = "sabre";
+    else if (state->mode == EPEE) {
+      state->mode = SABRE;
     }
     else {
-      state->mode = "foil";
+      state->mode = FOIL;
     }
     if (cmd == "b946ff00") {
       hc06.write("mode\n");
