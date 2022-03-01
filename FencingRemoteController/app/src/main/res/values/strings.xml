@@ -21,4 +21,6 @@
     <string name="on">On</string>
     <string name="off">Off</string>
     <string name="switch_mode">Switch Mode</string>
+    <string name="play_pause">play/pause</string>
+    <string name="pause">pause</string>
 </resources>
