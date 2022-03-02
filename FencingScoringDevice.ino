@@ -23,6 +23,7 @@
 
 */
 
+
 #define USE_TIMER_1 true
 #define DECODE_NEC
 #include <IRremote.hpp>
@@ -76,9 +77,10 @@ struct State {
   boolean muted = false;
   boolean buzzerOn = false;
   long buzzerStartTime = 0;
-} *state;
+  boolean inAction = false;
+};
 
-struct Weapon_State {
+struct WeaponState {
   long depressTime1 = 0;
   long depressTime2 = 0;
   bool lockedOut = false;
@@ -92,14 +94,19 @@ struct Weapon_State {
   boolean offTarget1 = false;
   boolean validHit2  = false;
   boolean offTarget2 = false;
-} *weaponState;
-
+};
+struct State * state = (struct State *) malloc(sizeof(struct State));
+struct WeaponState * weaponState = (struct WeaponState *) malloc(sizeof(struct WeaponState));
 SoftwareSerial hc06(2, 3); //Tx=2, Rx=3
 
 void TimerHandler() {
-  if (currentTime > 0) {
+  if (state->inAction){
     currentTime -= 1;
     writeTime();
+    Serial.println(currentTime);
+    if (currentTime == 0){
+      state->inAction = false;
+    }
   }
 }
 void writeScore(int player, int score) {
@@ -126,30 +133,26 @@ void setup() {
   bitClear(ADCSRA, ADPS1);
   bitSet  (ADCSRA, ADPS2);
 
+  
   Serial.begin(9600);
   hc06.begin(9600);
   IrReceiver.begin(IR_RECV, ENABLE_LED_FEEDBACK);
   ITimer1.init();
   ITimer1.attachInterruptInterval(TIMER_INTERVAL_MS, TimerHandler);
+ 
 }
 void loop() {
   while (1) {
 
-    weaponState->weapon1_B = analogRead(WEAPON_1_PINB);
-    weaponState->weapon2_B = analogRead(WEAPON_2_PINB);
-    weaponState->weapon1_A = analogRead(WEAPON_1_PINA);
-    weaponState->weapon2_B = analogRead(WEAPON_2_PINB);
+    if (state->inAction){
+      weaponState->weapon1_B = analogRead(WEAPON_1_PINB);
+      weaponState->weapon2_B = analogRead(WEAPON_2_PINB);
+      weaponState->weapon1_A = analogRead(WEAPON_1_PINA);
+      weaponState->weapon2_B = analogRead(WEAPON_2_PINB);
 
-    testBlades();
-    signalHit();
-
-
-
-
-
-
-
-
+      testBlades();
+      signalHit();
+    }
     
     //Check if there is any IR data to decode
     if (IrReceiver.decode()) {
@@ -183,6 +186,7 @@ void loop() {
     }
   }
 }
+
 void testBlades() {
 
   long now = micros();
@@ -269,7 +273,7 @@ void testBlades() {
 void signalHit() {
    // non time critical, this is run after a hit has been detected
    if (weaponState->lockedOut) {
-
+     state->inAction = false;
       //stop clock
       
       //sound buzzer
@@ -310,6 +314,18 @@ void resetValues() {
    weaponState->offTarget2 = false;
 }
 void parseCommand(String cmd) {
+  if (state->inAction == false && (cmd == "play\n" || cmd == "bb44ff00") && (currentTime > 0)){
+    state->inAction = true;
+    hc06.write("play\n");
+    Serial.println("play");
+  }
+  else if (state->inAction == true && (cmd == "pause\n" || cmd == "bb44ff00")){
+    state->inAction = false;
+    char * msg = "pause" + currentTime;
+    hc06.write(*msg + "\n");
+    Serial.println(*msg + "\n");
+    Serial.println("pause");
+  }
   if (cmd == "inc1\n" || cmd == "f708ff00") {
     state->score1 += 1;
     //write new score to SCORE1
@@ -358,6 +374,7 @@ void parseCommand(String cmd) {
 
   else if (cmd == "timer1\n" || cmd == "f30cff00") {
     currentTime = 60;
+    state->inAction = true;
     Serial.println("timer1");
     if (cmd == "f30cff00") {
       hc06.write("timer1\n");
@@ -365,6 +382,7 @@ void parseCommand(String cmd) {
   }
   else if (cmd == "timer3\n" || cmd == "a15eff00") {
     currentTime = 180;
+    state->inAction = true;
     Serial.println("timer3");
     if (cmd == "a15eff00") {
       hc06.write("timer3\n");
