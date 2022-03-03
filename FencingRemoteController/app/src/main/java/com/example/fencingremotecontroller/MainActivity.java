@@ -46,6 +46,7 @@ public class MainActivity extends AppCompatActivity {
     public static CreateConnectThread createConnectThread;
     int minutes;
     int seconds;
+    boolean inAction = false;
     private final static int CONNECTING_STATUS = 1; // used in bluetooth handler to identify message status
     private final static int MESSAGE_READ = 2; // used in bluetooth handler to identify message update
     private static final int REQUEST_ENABLE_BT = 1;
@@ -166,6 +167,7 @@ public class MainActivity extends AppCompatActivity {
                                     countDown.cancel();
                                 } catch (NullPointerException ignored) {
                                 }
+                                inAction = true;
                                 minutes = 1;
                                 seconds = 0;
                                 countDown = new CountDownTimer(600000, 1000) {
@@ -189,6 +191,8 @@ public class MainActivity extends AppCompatActivity {
                                     public void onFinish() {
                                         time.setText(R.string.time);
                                         playpause.setText("---");
+                                        inAction = false;
+                                        this.cancel();
                                     }
                                 }.start();
                                 break;
@@ -198,6 +202,7 @@ public class MainActivity extends AppCompatActivity {
                                     countDown.cancel();
                                 } catch (NullPointerException ignored) {
                                 }
+                                inAction = true;
                                 minutes = 3;
                                 seconds = 0;
                                 countDown = new CountDownTimer(1800000, 1000) {
@@ -221,19 +226,25 @@ public class MainActivity extends AppCompatActivity {
                                     public void onFinish() {
                                         time.setText(R.string.time);
                                         playpause.setText("---");
+                                        inAction = false;
+                                        this.cancel();
                                     }
                                 }.start();
                                 break;
                             }
 
                             case "play": { //receive the message to start timer from current timer value
+                                try {
+                                    countDown.cancel();
+                                } catch (NullPointerException ignored) {
+                                }
                                 String timetxt = time.getText().toString();
                                 String[] parts = timetxt.split(":");
                                 minutes = Integer.parseInt(parts[0]);
                                 seconds = Integer.parseInt(parts[1]);
                                 int timeMillis = ((minutes * 60) + seconds) * 1000;
-
-                                countDown = new CountDownTimer(timeMillis, 1000) {
+                                inAction = true;
+                                countDown = new CountDownTimer(timeMillis+1000, 1000) {
                                     @Override
                                     public void onTick(long l) {
                                         if (seconds == 0) {
@@ -255,23 +266,31 @@ public class MainActivity extends AppCompatActivity {
                                     public void onFinish() {
                                         time.setText(R.string.time);
                                         playpause.setText("---");
+                                        inAction = false;
+                                        this.cancel();
                                     }
                                 };
                                 countDown.start();
                                 playpause.setText("pause");
+                                break;
                             }
                             default: {
                                 if (arduinoMsg.contains("pause")) { //check for the pause message
+                                    try {
+                                        countDown.cancel();
+                                    } catch (NullPointerException ignored) {
+                                    }
                                     //get the time from the arduino and update the app's time
                                     String arduinoTime = arduinoMsg.substring(5);
                                     int arduinoTimeInt = Integer.parseInt(arduinoTime);
-                                    minutes = arduinoTimeInt % 60;
+                                    minutes = (int) arduinoTimeInt / 60;
                                     seconds = arduinoTimeInt - minutes * 60;
                                     @SuppressLint("DefaultLocale") String min_sec = String.format("%02d:%02d",
                                             minutes, seconds);
 
                                     time.setText(min_sec);
                                     if (minutes != 0 && seconds != 0) {
+                                        inAction = false;
                                         playpause.setText("play");
                                     }
                                 } else {
@@ -379,13 +398,17 @@ public class MainActivity extends AppCompatActivity {
                 try {
                     countDown.cancel();
                 } catch (NullPointerException ignored) {
+                    Log.e("playpause", "Timer couldn't cancel");
                 }
-                if (!countDown.toString().equals("00:00") && playpause.getText().equals("pause")) // timer is going
+                Log.i("inAction", String.valueOf(inAction));
+                if (inAction) // timer is going
                 {
+                    inAction = false;
                     connectedThread.write("pause\n");
                     playpause.setText("play");
-                } else if (!countDown.toString().equals("00:00") && playpause.getText().equals("play")) //timer is not going and is not at zero
+                } else if (!inAction) //timer is not going and is not at zero
                 {
+                    Log.i("!inAction", "!inAction");
                     String timetxt = time.getText().toString();
                     String[] parts = timetxt.split(":");
                     minutes = Integer.parseInt(parts[0]);
@@ -414,6 +437,7 @@ public class MainActivity extends AppCompatActivity {
                         public void onFinish() {
                             time.setText(R.string.time);
                             playpause.setText("---");
+                            this.cancel();
                         }
                     };
                     countDown.start();
@@ -428,7 +452,7 @@ public class MainActivity extends AppCompatActivity {
                     countDown.cancel();
                 } catch (NullPointerException ignored) {
                 }
-
+                inAction = true;
                 countDown = new CountDownTimer(600000, 1000) {
                     private int minutes = 1;
                     private int seconds = 0;
@@ -454,6 +478,8 @@ public class MainActivity extends AppCompatActivity {
                     public void onFinish() {
                         time.setText(R.string.time);
                         playpause.setText("---");
+                        inAction = false;
+                        this.cancel();
                     }
                 }.start();
                 connectedThread.write("timer1\n");
@@ -467,7 +493,7 @@ public class MainActivity extends AppCompatActivity {
                     countDown.cancel();
                 } catch (NullPointerException ignored) {
                 }
-
+                inAction = true;
                 countDown = new CountDownTimer(1800000, 1000) {
                     private int minutes = 3;
                     private int seconds = 0;
@@ -492,6 +518,8 @@ public class MainActivity extends AppCompatActivity {
                     public void onFinish() {
                         time.setText(R.string.time);
                         playpause.setText("---");
+                        inAction = false;
+                        this.cancel();
                     }
                 }.start();
                 connectedThread.write("timer3\n");

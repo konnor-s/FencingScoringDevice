@@ -6,15 +6,15 @@
   Table of analog voltage values for valid and off-target hits
   ///////////////////////////////////
   //            A    B      C
-  // Epee:
-  // Normal     0    1023   0
-  // Valid      510  510    0
-  // Off-target 330  330    330
-  //
   // Foil:
   // Normal     0    510    510
   // Valid      510  510    0
   // Off-target 0    1023   0
+  //
+  // Epee:
+  // Normal     0    1023   0
+  // Valid      510  510    0
+  // Off-target 330  330    330
   //
   // Sabre:
   // Normal     0    510    510
@@ -31,8 +31,8 @@
 #include "TimerInterrupt.h"
 #define TIMER_INTERVAL_MS 1000
 
-#define HC06_RX 2
-#define HC06_TX 3
+#define HC06_RX 3
+#define HC06_TX 2
 #define IR_RECV 4
 
 #define GREEN 5
@@ -97,9 +97,12 @@ struct WeaponState {
 };
 struct State * state = (struct State *) malloc(sizeof(struct State));
 struct WeaponState * weaponState = (struct WeaponState *) malloc(sizeof(struct WeaponState));
-SoftwareSerial hc06(2, 3); //Tx=2, Rx=3
+SoftwareSerial hc06(HC06_TX, HC06_RX); //Tx=2, Rx=3
 
 void TimerHandler() {
+  if (currentTime < 1){
+    currentTime = 1; //just in case
+  }
   if (state->inAction){
     currentTime -= 1;
     writeTime();
@@ -273,23 +276,28 @@ void testBlades() {
 void signalHit() {
    // non time critical, this is run after a hit has been detected
    if (weaponState->lockedOut) {
-     state->inAction = false;
+     Serial.println("signalHit");
+     pause();
       //stop clock
       
       //sound buzzer
       
       if (weaponState->validHit1){
         state->score1 = state->score1 + 1;
+        Serial.println("player 1 scored");
         //signal red light
       } 
       else if (weaponState->offTarget1){
+        Serial.println("player 1 off-target");
         //signal left white
       }
       if (weaponState->validHit2){
         state->score2 = state->score2 + 1;
+        Serial.println("player 2 scored");
         //signal green light
       }
       else if (weaponState->offTarget2){
+        Serial.println("player 2 off target");
         //signal right white
       }
       resetValues();
@@ -313,18 +321,54 @@ void resetValues() {
    weaponState->validHit2  = false;
    weaponState->offTarget2 = false;
 }
+void pause(){
+    state->inAction = false;
+    if (currentTime > 99){
+      char buffer [3];
+      char msg [10] = {'p','a','u','s','e','0','0','0','\n','\0'};
+      
+     
+      itoa(currentTime, buffer, 10);
+      for (int i = 5; i<8; i++){
+        msg[i] = buffer[i-5];
+      }
+     // Serial.println(msg);
+      
+      hc06.write(msg);
+    }
+    else if (currentTime > 9) {
+      char buffer [2];
+      char msg [] = {'p','a','u','s','e','0','0','\n','\0'};
+      itoa(currentTime, buffer, 10);
+      for (int i = 5; i<7; i++){
+        msg[i] = buffer[i-5];
+      }
+      //Serial.println(msg);
+      
+      hc06.write(msg);
+    }
+    else  {
+      char buffer [1];
+      char msg [] = {'p','a','u','s','e','0','\n','\0'};
+      itoa(currentTime, buffer, 10);
+      msg[5] = buffer[0];
+      
+      //Serial.println(msg);
+    
+      hc06.write(msg);
+    }
+}
 void parseCommand(String cmd) {
   if (state->inAction == false && (cmd == "play\n" || cmd == "bb44ff00") && (currentTime > 0)){
     state->inAction = true;
-    hc06.write("play\n");
+    if (cmd = "bb44ff00"){
+      hc06.write("play\n");
+    }
     Serial.println("play");
   }
   else if (state->inAction == true && (cmd == "pause\n" || cmd == "bb44ff00")){
-    state->inAction = false;
-    char * msg = "pause" + currentTime;
-    hc06.write(*msg + "\n");
-    Serial.println(*msg + "\n");
-    Serial.println("pause");
+    pause();
+    
   }
   if (cmd == "inc1\n" || cmd == "f708ff00") {
     state->score1 += 1;
