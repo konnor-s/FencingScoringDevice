@@ -35,13 +35,16 @@
 #define HC06_TX 2
 #define IR_RECV 4
 
-#define GREEN 5
-#define RED 6
-#define WHITE1 7
-#define WHITE2 8
-#define SCORE1 9
-#define SCORE2 10
-#define BUZZER 11
+#define MULT_0 5
+#define MULT_1 6 
+#define MULT_2 7
+#define MULT_3 8 
+#define INHIBIT_1 9  
+#define INHIBIT_2 10
+#define DATA_1 11
+#define DATA_2 12
+
+#define BUZZER 13
 #define WEAPON_1_PINC A0   // Ground A pin - Analog
 #define WEAPON_1_PINA A0 // Lame   A pin - Analog (Epee return path)
 #define WEAPON_1_PINB A1  // Weapon A pin - Analog
@@ -64,8 +67,8 @@ const int offTargetVoltageB [] = {950, 330, 2000};
 //fudgi0 to 88 and 1023 to 950 since it checks +-89
 
 
-#define BUZZER_TIME 2000
-#define LIGHT_TIME 2000
+#define BUZZER_TIME 2000 //buzzer for 2 seconds
+#define LIGHT_TIME 2000 //lights stay on for 2 additional seconds
 
 int i = 0;
 int currentTime = 0;
@@ -123,13 +126,6 @@ void writeTime() {
 
 
 void setup() {
-  pinMode(GREEN, OUTPUT);
-  pinMode(RED, OUTPUT);
-  pinMode(WHITE1, OUTPUT);
-  pinMode(WHITE2, OUTPUT);
-  pinMode(BUZZER, OUTPUT);
-  digitalWrite(BUZZER, LOW);
-
   //configure ADC
   DIDR0 = 0x7F;
   bitClear(ADCSRA, ADPS0);
