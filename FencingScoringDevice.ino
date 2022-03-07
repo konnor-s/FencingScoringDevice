@@ -23,7 +23,9 @@
 
 */
 
-
+#include <Wire.h> // Enable this line if using Arduino Uno, Mega, etc.
+#include <Adafruit_GFX.h>
+#include "Adafruit_LEDBackpack.h"
 #define USE_TIMER_1 true
 #define DECODE_NEC
 #include <IRremote.hpp>
@@ -56,6 +58,7 @@
 #define EPEE 1
 #define SABRE 2
 
+Adafruit_7segment matrix = Adafruit_7segment();
 
 //depress time is the amount of time needed to maintain valid contact for a hit to count
 const int depress [] = {300000, 45000, 120000}; //foil, epee, sabre
@@ -121,6 +124,21 @@ void writeScore(int player, int score) {
 void writeTime() {
   //Serial.println(currentTime);
   //write currentTime to the timer LEDs
+  
+  matrix.writeDigitRaw(2,0x02);
+
+  int minute=currentTime/60;
+  int seconds= (minute*60)-currentTime;
+  int digitArray[2];
+  String temp = String(seconds);
+  digitArray[0]=temp[0];
+  digitArray[1]=temp[1];
+  
+  matrix.writeDigitNum(1,minute);
+  matrix.writeDigitNum(3,digitArray[0]);
+  matrix.writeDigitNum(4,digitArray[1]);
+  matrix.writeDisplay();
+  
 }
 
 
@@ -138,6 +156,8 @@ void setup() {
   IrReceiver.begin(IR_RECV, ENABLE_LED_FEEDBACK);
   ITimer1.init();
   ITimer1.attachInterruptInterval(TIMER_INTERVAL_MS, TimerHandler);
+
+  
  
 }
 void loop() {
