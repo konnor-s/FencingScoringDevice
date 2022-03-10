@@ -1,5 +1,6 @@
 package com.example.fencingremotecontroller;
 
+import android.app.Dialog;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
@@ -11,6 +12,7 @@ import androidx.core.content.ContextCompat;
 
 import android.Manifest;
 import android.annotation.SuppressLint;
+import android.content.DialogInterface;
 import android.graphics.Color;
 import android.os.Bundle;
 import android.os.CountDownTimer;
@@ -59,7 +61,7 @@ public class MainActivity extends AppCompatActivity {
     private TextView mode;
     private ToggleButton onoff;
     private Button playpause;
-
+    private Button resetButton;
     // Function to check and request permission
     public void checkPermission(String permission, int requestCode) {
         // Checking if permission is not granted
@@ -75,6 +77,7 @@ public class MainActivity extends AppCompatActivity {
         startActivity(intent);
     }
 
+    @SuppressLint("SetTextI18n")
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -93,6 +96,7 @@ public class MainActivity extends AppCompatActivity {
         mute = findViewById(R.id.mute);
         mode = findViewById(R.id.mode);
         onoff = findViewById(R.id.onoff);
+        resetButton = findViewById(R.id.resetButton);
         ImageButton increment1 = findViewById(R.id.increment1);
         ImageButton decrement1 = findViewById(R.id.decrement1);
         ImageButton increment2 = findViewById(R.id.increment2);
@@ -304,18 +308,69 @@ public class MainActivity extends AppCompatActivity {
                 }
             }
         };
+        resetButton.setOnClickListener(view -> {
+            if (connectedThread != null && connectedThread.isConnected())
+            {
+                AlertDialog.Builder alert = new AlertDialog.Builder(this);
+                    alert.setTitle("Reset confirmation");
+                    alert.setMessage("Press Confirm if you would like to reset scores/timer, otherwise press Cancel.");
+                    alert.setPositiveButton("Confirm", new DialogInterface.OnClickListener() {
+                        @Override
+                        public void onClick(DialogInterface dialogInterface, int i) {
+                            //set scores to zero and reset time
+                            countDown.cancel();
+                            time.setText("00:00");
+                            score1.setText("0");
+                            score2.setText("0");
+                            connectedThread.write("reset\n");
+                        }
+                    });
+                    alert.setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
+                        @Override
+                        public void onClick(DialogInterface dialogInterface, int i) {
+
+                        }
+                    });
+                alert.create().show();
+            }
+            else {
+                openDeviceList();
+            }
+        });
         modeButton.setOnClickListener(view -> {
             if (connectedThread != null && connectedThread.isConnected()) {
-                if (mode.getText().equals("Foil")) {
-                    connectedThread.write("foil\n");
-                    mode.setText("Epee");
-                } else if (mode.getText().equals("Epee")) {
-                    connectedThread.write("epee\n");
-                    mode.setText("Sabre");
-                } else if (mode.getText().equals("Sabre")) {
-                    connectedThread.write("sabre\n");
-                    mode.setText("Foil");
-                }
+                AlertDialog.Builder alert = new AlertDialog.Builder(this);
+                alert.setTitle("Warning!");
+                alert.setMessage("Changing mode will also reset scores/timer! Press Confirm to continue, otherwise press Cancel.");
+                alert.setPositiveButton("Confirm", new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialogInterface, int i) {
+                        //set scores to zero and reset time
+                        countDown.cancel();
+                        time.setText("00:00");
+                        score1.setText("0");
+                        score2.setText("0");
+                        connectedThread.write("reset\n");
+                        if (mode.getText().equals("Foil")) {
+                            connectedThread.write("foil\n");
+                            mode.setText("Epee");
+                        } else if (mode.getText().equals("Epee")) {
+                            connectedThread.write("epee\n");
+                            mode.setText("Sabre");
+                        } else if (mode.getText().equals("Sabre")) {
+                            connectedThread.write("sabre\n");
+                            mode.setText("Foil");
+                        }
+                    }
+                });
+                alert.setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialogInterface, int i) {
+
+                    }
+                });
+                alert.create().show();
+
             } else {
                 openDeviceList();
             }
