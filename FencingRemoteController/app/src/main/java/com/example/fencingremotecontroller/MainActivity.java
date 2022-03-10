@@ -44,7 +44,9 @@ public class MainActivity extends AppCompatActivity {
     public static BluetoothSocket mmSocket;
     public static ConnectedThread connectedThread;
     public static CreateConnectThread createConnectThread;
-
+    int minutes;
+    int seconds;
+    boolean inAction = false;
     private final static int CONNECTING_STATUS = 1; // used in bluetooth handler to identify message status
     private final static int MESSAGE_READ = 2; // used in bluetooth handler to identify message update
     private static final int REQUEST_ENABLE_BT = 1;
@@ -54,15 +56,9 @@ public class MainActivity extends AppCompatActivity {
     private TextView time;
     private ToggleButton mute;
     private CountDownTimer countDown;
-    private ToggleButton yellow1;
-    private ToggleButton yellow2;
-    private ToggleButton red1;
-    private ToggleButton red2;
-    private ToggleButton black1;
-    private ToggleButton black2;
     private TextView mode;
     private ToggleButton onoff;
-
+    private Button playpause;
 
     // Function to check and request permission
     public void checkPermission(String permission, int requestCode) {
@@ -72,6 +68,11 @@ public class MainActivity extends AppCompatActivity {
         } else {
             //Toast.makeText(MainActivity.this, "Permission already granted", Toast.LENGTH_SHORT).show();
         }
+    }
+
+    public void openDeviceList() {
+        Intent intent = new Intent(MainActivity.this, SelectDeviceActivity.class);
+        startActivity(intent);
     }
 
     @Override
@@ -86,12 +87,6 @@ public class MainActivity extends AppCompatActivity {
 
         final Toolbar toolbar = findViewById(R.id.toolbar);
         final Button buttonConnect = findViewById(R.id.buttonConnect);
-        yellow1 = findViewById(R.id.yellow1);
-        yellow2 = findViewById(R.id.yellow2);
-        red1 = findViewById(R.id.red1);
-        red2 = findViewById(R.id.red2);
-        black1 = findViewById(R.id.black1);
-        black2 = findViewById(R.id.black2);
         score1 = findViewById(R.id.score1);
         score2 = findViewById(R.id.score2);
         time = findViewById(R.id.time);
@@ -104,27 +99,19 @@ public class MainActivity extends AppCompatActivity {
         ImageButton decrement2 = findViewById(R.id.decrement2);
         Button timer1 = findViewById(R.id.timer1);
         Button timer3 = findViewById(R.id.timer3);
-
+        Button modeButton = findViewById(R.id.modeButton);
+        playpause = findViewById(R.id.playpauseButton);
         // If a bluetooth device has been selected from SelectDeviceActivity
         deviceName = getIntent().getStringExtra("deviceName");
         if (deviceName != null) {
             deviceAddress = getIntent().getStringExtra("deviceAddress");
             toolbar.setSubtitle("Connecting to " + deviceName + "...");
             buttonConnect.setEnabled(false);
-
-            /*
-            This is the most important piece of code. When "deviceName" is found
-            the code will call a new thread to create a bluetooth connection to the
-            selected device (see the thread code below)
-             */
             BluetoothAdapter bluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
             createConnectThread = new CreateConnectThread(bluetoothAdapter, deviceAddress);
             createConnectThread.start();
         }
 
-        /*
-        Second most important piece of Code. GUI Handler
-         */
         handler = new Handler(Looper.getMainLooper()) {
             @Override
             public void handleMessage(Message msg) {
@@ -144,38 +131,171 @@ public class MainActivity extends AppCompatActivity {
 
                     case MESSAGE_READ:
                         String arduinoMsg = msg.obj.toString(); // Read message from Arduino
-                        mode.setText(arduinoMsg);
                         switch (arduinoMsg) {
                             case "inc1": {
                                 int newScore = Integer.parseInt(score1.getText().toString()) + 1;
-                                score1.setText(newScore);
+                                score1.setText(String.valueOf(newScore));
                                 break;
                             }
                             case "inc2": {
                                 int newScore = Integer.parseInt(score2.getText().toString()) + 1;
-                                score1.setText(newScore);
+                                score2.setText(String.valueOf(newScore));
                                 break;
                             }
                             case "dec1": {
                                 int newScore = Integer.parseInt(score1.getText().toString()) - 1;
-                                score1.setText(newScore);
+                                score1.setText(String.valueOf(newScore));
                                 break;
                             }
                             case "dec2": {
                                 int newScore = Integer.parseInt(score2.getText().toString()) - 1;
-                                score1.setText(newScore);
+                                score2.setText(String.valueOf(newScore));
                                 break;
                             }
-                            case "foil": {
-                                mode.setText("Foil");
+                            case "mode": {
+                                if (mode.getText().equals("Foil")) {
+                                    mode.setText("Epee");
+                                } else if (mode.getText().equals("Epee")) {
+                                    mode.setText("Sabre");
+                                } else if (mode.getText().equals("Sabre")) {
+                                    mode.setText("Foil");
+                                }
                                 break;
                             }
-                            case "epee": {
-                                mode.setText("Epee");
+                            case "timer1": {
+                                try {
+                                    countDown.cancel();
+                                } catch (NullPointerException ignored) {
+                                }
+                                inAction = true;
+                                minutes = 1;
+                                seconds = 0;
+                                countDown = new CountDownTimer(600000, 1000) {
+                                    public void onTick(long millis) {
+                                        if (seconds == 0) {
+                                            if (minutes != 0) {
+                                                seconds = 59;
+                                                minutes -= 1;
+                                            }
+                                        } else {
+                                            seconds -= 1;
+                                        }
+
+                                        @SuppressLint("DefaultLocale") String min_sec = String.format("%02d:%02d",
+                                                minutes, seconds);
+
+                                        time.setText(min_sec);
+
+                                    }
+
+                                    public void onFinish() {
+                                        time.setText(R.string.time);
+                                        playpause.setText("---");
+                                        inAction = false;
+                                        this.cancel();
+                                    }
+                                }.start();
                                 break;
                             }
-                            case "sabre": {
-                                mode.setText("Sabre");
+                            case "timer3": {
+                                try {
+                                    countDown.cancel();
+                                } catch (NullPointerException ignored) {
+                                }
+                                inAction = true;
+                                minutes = 3;
+                                seconds = 0;
+                                countDown = new CountDownTimer(1800000, 1000) {
+
+                                    public void onTick(long millis) {
+                                        if (seconds == 0) {
+                                            if (minutes != 0) {
+                                                seconds = 59;
+                                                minutes -= 1;
+                                            }
+                                        } else {
+                                            seconds -= 1;
+                                        }
+
+                                        @SuppressLint("DefaultLocale") String min_sec = String.format("%02d:%02d",
+                                                minutes, seconds);
+
+                                        time.setText(min_sec);
+                                    }
+
+                                    public void onFinish() {
+                                        time.setText(R.string.time);
+                                        playpause.setText("---");
+                                        inAction = false;
+                                        this.cancel();
+                                    }
+                                }.start();
+                                break;
+                            }
+
+                            case "play": { //receive the message to start timer from current timer value
+                                try {
+                                    countDown.cancel();
+                                } catch (NullPointerException ignored) {
+                                }
+                                String timetxt = time.getText().toString();
+                                String[] parts = timetxt.split(":");
+                                minutes = Integer.parseInt(parts[0]);
+                                seconds = Integer.parseInt(parts[1]);
+                                int timeMillis = ((minutes * 60) + seconds) * 1000;
+                                inAction = true;
+                                countDown = new CountDownTimer(timeMillis+1000, 1000) {
+                                    @Override
+                                    public void onTick(long l) {
+                                        if (seconds == 0) {
+                                            if (minutes != 0) {
+                                                seconds = 59;
+                                                minutes -= 1;
+                                            }
+                                        } else {
+                                            seconds -= 1;
+                                        }
+
+                                        @SuppressLint("DefaultLocale") String min_sec = String.format("%02d:%02d",
+                                                minutes, seconds);
+
+                                        time.setText(min_sec);
+                                    }
+
+                                    @Override
+                                    public void onFinish() {
+                                        time.setText(R.string.time);
+                                        playpause.setText("---");
+                                        inAction = false;
+                                        this.cancel();
+                                    }
+                                };
+                                countDown.start();
+                                playpause.setText("pause");
+                                break;
+                            }
+                            default: {
+                                if (arduinoMsg.contains("pause")) { //check for the pause message
+                                    try {
+                                        countDown.cancel();
+                                    } catch (NullPointerException ignored) {
+                                    }
+                                    //get the time from the arduino and update the app's time
+                                    String arduinoTime = arduinoMsg.substring(5);
+                                    int arduinoTimeInt = Integer.parseInt(arduinoTime);
+                                    minutes = (int) arduinoTimeInt / 60;
+                                    seconds = arduinoTimeInt - minutes * 60;
+                                    @SuppressLint("DefaultLocale") String min_sec = String.format("%02d:%02d",
+                                            minutes, seconds);
+
+                                    time.setText(min_sec);
+                                    if (minutes != 0 && seconds != 0) {
+                                        inAction = false;
+                                        playpause.setText("play");
+                                    }
+                                } else {
+                                    Log.e("msg", "Invalid message");
+                                }
                                 break;
                             }
                         }
@@ -184,169 +304,228 @@ public class MainActivity extends AppCompatActivity {
                 }
             }
         };
-
+        modeButton.setOnClickListener(view -> {
+            if (connectedThread != null && connectedThread.isConnected()) {
+                if (mode.getText().equals("Foil")) {
+                    connectedThread.write("foil\n");
+                    mode.setText("Epee");
+                } else if (mode.getText().equals("Epee")) {
+                    connectedThread.write("epee\n");
+                    mode.setText("Sabre");
+                } else if (mode.getText().equals("Sabre")) {
+                    connectedThread.write("sabre\n");
+                    mode.setText("Foil");
+                }
+            } else {
+                openDeviceList();
+            }
+        });
         // Select Bluetooth Device
         buttonConnect.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                // Move to adapter list
-                Intent intent = new Intent(MainActivity.this, SelectDeviceActivity.class);
-                startActivity(intent);
+                openDeviceList();
             }
         });
 
 
-        onoff.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
+        onoff.setOnClickListener(view -> {
+            if (connectedThread != null && connectedThread.isConnected()) {
                 String btnState = onoff.getText().toString().toLowerCase();
                 connectedThread.write("Hello\n");
+            } else {
+                openDeviceList();
             }
         });
 
-
-        yellow1.setOnCheckedChangeListener((a, b) -> {
-            if (yellow1.isChecked()) {
-                yellow1.setBackgroundColor(Color.parseColor("#FFFF00"));
-            } else {
-                yellow1.setBackgroundColor(Color.parseColor("#FBFBCE"));
-            }
-        });
-        yellow2.setOnCheckedChangeListener((a, b) -> {
-            if (yellow2.isChecked()) {
-                yellow2.setBackgroundColor(Color.parseColor("#FFFF00"));
-            } else {
-                yellow2.setBackgroundColor(Color.parseColor("#FBFBCE"));
-            }
-        });
-        red1.setOnCheckedChangeListener((a, b) -> {
-            if (red1.isChecked()) {
-                red1.setBackgroundColor(Color.parseColor("#FF0000"));
-            } else {
-                red1.setBackgroundColor(Color.parseColor("#FFCECE"));
-            }
-        });
-        red2.setOnCheckedChangeListener((a, b) -> {
-            if (red2.isChecked()) {
-                red2.setBackgroundColor(Color.parseColor("#FF0000"));
-            } else {
-                red2.setBackgroundColor(Color.parseColor("#FFCECE"));
-            }
-        });
-        black1.setOnCheckedChangeListener((a, b) -> {
-            if (black1.isChecked()) {
-                black1.setBackgroundColor(Color.parseColor("#000000"));
-            } else {
-                black1.setBackgroundColor(Color.parseColor("#D8D8D8"));
-            }
-        });
-        black2.setOnCheckedChangeListener((a, b) -> {
-            if (black2.isChecked()) {
-                black2.setBackgroundColor(Color.parseColor("#000000"));
-            } else {
-                black2.setBackgroundColor(Color.parseColor("#D8D8D8"));
-            }
-        });
         increment1.setOnClickListener(view -> {
-            int score = Integer.parseInt(score1.getText().toString());
-            score += 1;
-            score1.setText(String.valueOf(score));
-            connectedThread.write("inc1\n");
-
+            if (connectedThread != null && connectedThread.isConnected()) {
+                int score = Integer.parseInt(score1.getText().toString());
+                score += 1;
+                score1.setText(String.valueOf(score));
+                connectedThread.write("inc1\n");
+            } else {
+                openDeviceList();
+            }
         });
         increment2.setOnClickListener(view -> {
-            int score = Integer.parseInt(score2.getText().toString());
-            score += 1;
-            score2.setText(String.valueOf(score));
-            connectedThread.write("inc2\n");
+            if (connectedThread != null && connectedThread.isConnected()) {
+                int score = Integer.parseInt(score2.getText().toString());
+                score += 1;
+                score2.setText(String.valueOf(score));
+                connectedThread.write("inc2\n");
+            } else {
+                openDeviceList();
+            }
         });
         decrement1.setOnClickListener(view -> {
-            int score = Integer.parseInt(score1.getText().toString());
-            if (score > 0) {
-                score -= 1;
-                score1.setText(String.valueOf(score));
-                connectedThread.write("dec1\n");
+            if (connectedThread != null && connectedThread.isConnected()) {
+                int score = Integer.parseInt(score1.getText().toString());
+                if (score > 0) {
+                    score -= 1;
+                    score1.setText(String.valueOf(score));
+                    connectedThread.write("dec1\n");
+                }
+            } else {
+                openDeviceList();
             }
         });
         decrement2.setOnClickListener(view -> {
-            int score = Integer.parseInt(score2.getText().toString());
-            if (score > 0) {
-                score -= 1;
-                score2.setText(String.valueOf(score));
-                connectedThread.write("dec2\n");
+            if (connectedThread != null && connectedThread.isConnected()) {
+                int score = Integer.parseInt(score2.getText().toString());
+                if (score > 0) {
+                    score -= 1;
+                    score2.setText(String.valueOf(score));
+                    connectedThread.write("dec2\n");
+                }
+            } else {
+                openDeviceList();
             }
         });
         mute.setOnClickListener(view -> {
-            if (mute.getText().toString().equals("Mute")) {
-                connectedThread.write("mute\n");
+            if (connectedThread != null && connectedThread.isConnected()) {
+                if (mute.getText().toString().equals("Mute")) {
+                    connectedThread.write("mute\n");
+                } else {
+                    connectedThread.write("mute\n");
+                }
             } else {
-                connectedThread.write("unmute");
+                openDeviceList();
+            }
+        });
+        playpause.setOnClickListener(view -> {
+            if (connectedThread != null && connectedThread.isConnected()) {
+                try {
+                    countDown.cancel();
+                } catch (NullPointerException ignored) {
+                    Log.e("playpause", "Timer couldn't cancel");
+                }
+                Log.i("inAction", String.valueOf(inAction));
+                if (inAction) // timer is going
+                {
+                    inAction = false;
+                    connectedThread.write("pause\n");
+                    playpause.setText("play");
+                } else if (!inAction) //timer is not going and is not at zero
+                {
+                    Log.i("!inAction", "!inAction");
+                    String timetxt = time.getText().toString();
+                    String[] parts = timetxt.split(":");
+                    minutes = Integer.parseInt(parts[0]);
+                    seconds = Integer.parseInt(parts[1]);
+                    int timeMillis = ((minutes * 60) + seconds) * 1000;
+
+                    countDown = new CountDownTimer(timeMillis, 1000) {
+                        @Override
+                        public void onTick(long l) {
+                            if (seconds == 0) {
+                                if (minutes != 0) {
+                                    seconds = 59;
+                                    minutes -= 1;
+                                }
+                            } else {
+                                seconds -= 1;
+                            }
+
+                            @SuppressLint("DefaultLocale") String min_sec = String.format("%02d:%02d",
+                                    minutes, seconds);
+
+                            time.setText(min_sec);
+                        }
+
+                        @Override
+                        public void onFinish() {
+                            time.setText(R.string.time);
+                            playpause.setText("---");
+                            this.cancel();
+                        }
+                    };
+                    countDown.start();
+                    connectedThread.write("play\n");
+                    playpause.setText("pause");
+                }
             }
         });
         timer1.setOnClickListener(view -> {
-            try {
-                countDown.cancel();
-            } catch (NullPointerException ignored) {
-            }
+            if (connectedThread != null && connectedThread.isConnected()) {
+                try {
+                    countDown.cancel();
+                } catch (NullPointerException ignored) {
+                }
+                inAction = true;
+                countDown = new CountDownTimer(600000, 1000) {
+                    private int minutes = 1;
+                    private int seconds = 0;
 
-            countDown = new CountDownTimer(600000, 1000) {
-                private int minutes = 1;
-                private int seconds = 0;
-
-                public void onTick(long millis) {
-                    if (seconds == 0) {
-                        if (minutes != 0) {
-                            seconds = 59;
-                            minutes -= 1;
+                    public void onTick(long millis) {
+                        if (seconds == 0) {
+                            if (minutes != 0) {
+                                seconds = 59;
+                                minutes -= 1;
+                            }
+                        } else {
+                            seconds -= 1;
                         }
-                    } else {
-                        seconds -= 1;
+
+                        @SuppressLint("DefaultLocale") String min_sec = String.format("%02d:%02d",
+                                minutes, seconds);
+
+                        time.setText(min_sec);
+                        playpause.setText("pause");
+
                     }
 
-                    @SuppressLint("DefaultLocale") String min_sec = String.format("%02d:%02d",
-                            minutes, seconds);
-
-                    time.setText(min_sec);
-
-                }
-
-                public void onFinish() {
-                    time.setText(R.string.time);
-                }
-            }.start();
-            connectedThread.write("timer1\n");
+                    public void onFinish() {
+                        time.setText(R.string.time);
+                        playpause.setText("---");
+                        inAction = false;
+                        this.cancel();
+                    }
+                }.start();
+                connectedThread.write("timer1\n");
+            } else {
+                openDeviceList();
+            }
         });
         timer3.setOnClickListener(view -> {
-            try {
-                countDown.cancel();
-            } catch (NullPointerException ignored) {
-            }
+            if (connectedThread != null && connectedThread.isConnected()) {
+                try {
+                    countDown.cancel();
+                } catch (NullPointerException ignored) {
+                }
+                inAction = true;
+                countDown = new CountDownTimer(1800000, 1000) {
+                    private int minutes = 3;
+                    private int seconds = 0;
 
-            countDown = new CountDownTimer(1800000, 1000) {
-                private int minutes = 3;
-                private int seconds = 0;
-
-                public void onTick(long millis) {
-                    if (seconds == 0) {
-                        if (minutes != 0) {
-                            seconds = 59;
-                            minutes -= 1;
+                    public void onTick(long millis) {
+                        if (seconds == 0) {
+                            if (minutes != 0) {
+                                seconds = 59;
+                                minutes -= 1;
+                            }
+                        } else {
+                            seconds -= 1;
                         }
-                    } else {
-                        seconds -= 1;
+
+                        @SuppressLint("DefaultLocale") String min_sec = String.format("%02d:%02d",
+                                minutes, seconds);
+
+                        time.setText(min_sec);
+                        playpause.setText("pause");
                     }
 
-                    @SuppressLint("DefaultLocale") String min_sec = String.format("%02d:%02d",
-                            minutes, seconds);
-
-                    time.setText(min_sec);
-                }
-
-                public void onFinish() {
-                    time.setText(R.string.time);
-                }
-            }.start();
-            connectedThread.write("timer3\n");
+                    public void onFinish() {
+                        time.setText(R.string.time);
+                        playpause.setText("---");
+                        inAction = false;
+                        this.cancel();
+                    }
+                }.start();
+                connectedThread.write("timer3\n");
+            } else {
+                openDeviceList();
+            }
         });
     }
 
@@ -473,10 +652,13 @@ public class MainActivity extends AppCompatActivity {
             byte[] bytes = input.getBytes(); //converts entered String into bytes
             try {
                 mmOutStream.write(bytes);
-                Log.i("Hey", "message sent");
             } catch (IOException e) {
                 Log.e("Send Error", "Unable to send message", e);
             }
+        }
+
+        public boolean isConnected() {
+            return mmSocket.isConnected();
         }
 
         /* Call this from the main activity to shutdown the connection */
