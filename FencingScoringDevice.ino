@@ -182,6 +182,7 @@ void loop()
     }
     if (j > 1000000000) {
       j = 0;
+      Serial.println(".");
     }
     if (state->inAction)
     {
@@ -287,7 +288,7 @@ void testBlades()
     weapon2 = &weaponState->weapon2_B;
     target2 = &weaponState->weapon1_A;
   }
-  #ifdef DEBUG_VOLTAGE
+#ifdef DEBUG_VOLTAGE
   if (j % 10000000 == 0) {
     Serial.print("1A:");
     Serial.println(weaponState->weapon1_A);
@@ -301,7 +302,7 @@ void testBlades()
   if (j > 100000000) {
     j = 0;
   }
-  #endif
+#endif
 
   // check if lockout time is here
   // A hit has occurred, and the lockout duration has passed.
@@ -419,7 +420,7 @@ void signalHit()
   pause(); // sets inAction to false and sends pause command via bluetooth
 
   // sound buzzer
-  #ifdef DEBUG_VOLTAGE
+#ifdef DEBUG_VOLTAGE
   Serial.print("1A:");
   Serial.println(weaponState->weapon1_A);
   Serial.print("1B:");
@@ -433,7 +434,7 @@ void signalHit()
   Serial.println(offTargetVoltageLowB[state->mode]);
   Serial.println(offTargetVoltageHighB[state->mode]);
   Serial.println(state->mode);
-  #endif
+#endif
   if (weaponState->validHit1)
   {
     state->score1 += 1;
@@ -456,16 +457,18 @@ void signalHit()
     Serial.println("player 2 off target");
     // signal right white
   }
+
+  delay(BUZZER_TIME); // wait before turning off the buzzer
+  // turn off buzzer
+  delay(LIGHT_TIME); // wait before turning off the lights
+  // turn off all lights
   resetValues();
 }
 
 void resetValues()
 {
   Serial.println("reset");
-  delay(BUZZER_TIME); // wait before turning off the buzzer
-  // turn off buzzer
-  delay(LIGHT_TIME); // wait before turning off the lights
-  // turn off all lights
+  
 
   weaponState->lockedOut = false;
 
@@ -522,7 +525,17 @@ void pause()
 }
 void parseCommand(String cmd)
 {
-  if (cmd == "reset\n"){}
+  if (cmd == "reset\n" || cmd == "e619ff00") {
+    state->inAction = false;
+    state->score1 = false;
+    state->score2 = false;
+    currentTime = 0;
+    resetValues();
+    if (cmd == "e619ff00") {
+      hc06.write("reset\n");
+    }
+    Serial.println("reset");
+  }
   else if (state->inAction == false && (cmd == "play\n" || cmd == "bb44ff00") && (currentTime > 0))
   {
     state->inAction = true;
@@ -650,7 +663,7 @@ void parseCommand(String cmd)
       hc06.write("mode\n");
     }
   }
-  else{
+  else {
     Serial.println(cmd);
   }
 }
