@@ -322,6 +322,8 @@ public class MainActivity extends AppCompatActivity {
                             time.setText("00:00");
                             score1.setText("0");
                             score2.setText("0");
+                            playpause.setText("---");
+                            inAction = false;
                             connectedThread.write("reset\n");
                         }
                     });

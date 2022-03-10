@@ -236,6 +236,7 @@
         android:layout_height="wrap_content"
         android:layout_marginEnd="132dp"
         android:layout_marginBottom="4dp"
+        android:backgroundTint="#6120D3"
         android:text="@string/reset"
         app:layout_constraintBottom_toTopOf="@+id/playpauseButton"
         app:layout_constraintEnd_toEndOf="@+id/playpauseButton" />
