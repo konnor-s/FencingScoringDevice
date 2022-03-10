@@ -278,6 +278,19 @@ public class MainActivity extends AppCompatActivity {
                                 playpause.setText("pause");
                                 break;
                             }
+                            case "reset": {
+                                try {
+                                    countDown.cancel();
+                                } catch (NullPointerException ignored) {
+                                }
+
+                                time.setText("00:00");
+                                score1.setText("0");
+                                score2.setText("0");
+                                playpause.setText("---");
+                                inAction = false;
+                            }
+
                             default: {
                                 if (arduinoMsg.contains("pause")) { //check for the pause message
                                     try {
@@ -318,7 +331,10 @@ public class MainActivity extends AppCompatActivity {
                         @Override
                         public void onClick(DialogInterface dialogInterface, int i) {
                             //set scores to zero and reset time
-                            countDown.cancel();
+                            try {
+                                countDown.cancel();
+                            } catch (NullPointerException ignored) {
+                            }
                             time.setText("00:00");
                             score1.setText("0");
                             score2.setText("0");

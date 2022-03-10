@@ -522,7 +522,8 @@ void pause()
 }
 void parseCommand(String cmd)
 {
-  if (state->inAction == false && (cmd == "play\n" || cmd == "bb44ff00") && (currentTime > 0))
+  if (cmd == "reset\n"){}
+  else if (state->inAction == false && (cmd == "play\n" || cmd == "bb44ff00") && (currentTime > 0))
   {
     state->inAction = true;
     if (cmd = "bb44ff00")
@@ -648,5 +649,8 @@ void parseCommand(String cmd)
     {
       hc06.write("mode\n");
     }
+  }
+  else{
+    Serial.println(cmd);
   }
 }
