@@ -129,6 +129,7 @@ void TimerHandler()
 
 void setup()
 {
+  matrix.begin(0x70);
   // configure ADC
   DIDR0 = 0x0F; //disabling digital inputs for A0-A3
   bitClear(ADCSRA, ADPS0);
