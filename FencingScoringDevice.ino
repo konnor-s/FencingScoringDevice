@@ -37,14 +37,12 @@
 #define HC06_TX 2
 #define IR_RECV 4
 
-#define MULT_0 5
-#define MULT_1 6
-#define MULT_2 7
-#define MULT_3 8
-#define INHIBIT_1 9
-#define INHIBIT_2 10
-#define DATA_1 11
-#define DATA_2 12
+#define DATA 5
+#define SRCLK1 6
+#define RCLK1 7
+#define SRCLK2 8
+#define RCLK2 9
+
 
 #define BUZZER 13
 #define WEAPON_1_PINA A0 // Lame   A pin - Analog (Epee return path)
@@ -75,7 +73,7 @@ const int offTargetVoltageHighB[] = {1025, 420, -2};
 
 int j = 0;
 int currentTime = 0;
-
+int write_time = false;
 struct State
 {
   bool inAction = false;
@@ -116,7 +114,8 @@ void TimerHandler()
   if (state->inAction)
   {
     currentTime -= 1;
-    //writeTime();
+    write_time = true;
+    // writeTime();
     Serial.println(currentTime);
 
 
@@ -135,14 +134,11 @@ void setup()
   bitClear(ADCSRA, ADPS1);
   bitSet(ADCSRA, ADPS2); // /16 prescaler
 
-  pinMode(MULT_0, OUTPUT);
-  pinMode(MULT_1, OUTPUT);
-  pinMode(MULT_2, OUTPUT);
-  pinMode(MULT_3, OUTPUT);
-  pinMode(INHIBIT_1, OUTPUT);
-  pinMode(INHIBIT_2, OUTPUT);
-  pinMode(DATA_1, OUTPUT);
-  pinMode(DATA_2, OUTPUT);
+  pinMode(DATA, OUTPUT);
+  pinMode(SRCLK1, OUTPUT);
+  pinMode(RCLK1, OUTPUT);
+  pinMode(SRCLK2, OUTPUT);
+  pinMode(RCLK2, OUTPUT);
   pinMode(BUZZER, OUTPUT);
 
   //Instantiate the struct variables. (they don't instantiate within the definition)
@@ -170,20 +166,43 @@ void setup()
   IrReceiver.begin(IR_RECV, ENABLE_LED_FEEDBACK);
   ITimer1.init();
   ITimer1.attachInterruptInterval(TIMER_INTERVAL_MS, TimerHandler);
+
+  matrix.begin(0x70);
+  matrix.writeDigitRaw(2, 0x02);
+
+  matrix.writeDigitNum(1, 0);
+  matrix.writeDigitNum(3, 0);
+  matrix.writeDigitNum(4, 0);
+  matrix.writeDisplay();
+
+  int q = 0;
+  for (int i = 0; i < 8; i++) {
+
+
+    digitalWrite(DATA, 1);
+    delayMicroseconds(1);
+    digitalWrite(SRCLK1, 1);
+    delayMicroseconds(1);
+    digitalWrite(SRCLK1, 0);
+
+    delayMicroseconds(1);
+  }
+  digitalWrite(RCLK1, 1);
+  delayMicroseconds(1);
+  digitalWrite(RCLK1, 0);
 }
 void loop()
 {
   while (1)
   {
-    if (j % 100000000 == 0) {
-      // state->mode = EPEE;
-      Serial.print(".");
+    // if (j % 1000000000 == 0) {
+    // Serial.print(".");
 
-    }
-    if (j > 1000000000) {
-      j = 0;
-      Serial.println(".");
-    }
+    //}
+    //if (j > 10000000000) {
+    //j = 0;
+    //Serial.println(".");
+    //}
     if (state->inAction)
     {
       weaponState->weapon1_B = analogRead(WEAPON_1_PINB);
@@ -210,6 +229,12 @@ void loop()
     // Check if there is any bluetooth data to decode
     if (hc06.available()) {
       decodeBluetooth();
+    }
+    if (write_time == true) {
+
+      writeTime();
+      write_time = false;
+      Serial.println("write");
     }
   }
 }
@@ -241,30 +266,26 @@ void decodeBluetooth()
   }
 }
 
-void writeScore(int player, int score)
+void writeTime()
 {
-  // write to either SCORE1 or SCORE2 with state->score1/2
-}
-/*
-  void writeTime()
-  {
   // Serial.println(currentTime);
   // write currentTime to the timer LEDs
 
   matrix.writeDigitRaw(2, 0x02);
 
   int minute = currentTime / 60;
-  int seconds = (minute * 60) - currentTime;
+  int seconds =  currentTime - (minute * 60);
   int digitArray[2];
-  String temp = String(seconds);
-  digitArray[0] = temp[0];
-  digitArray[1] = temp[1];
+  digitArray[0] = seconds / 10;
+  digitArray[1] = seconds - (seconds / 10) * 10;
 
   matrix.writeDigitNum(1, minute);
   matrix.writeDigitNum(3, digitArray[0]);
   matrix.writeDigitNum(4, digitArray[1]);
   matrix.writeDisplay();
-  }*/
+  Serial.println(digitArray[0]);
+  Serial.println(digitArray[1]);
+}
 
 void testBlades()
 {
@@ -438,6 +459,7 @@ void signalHit()
   if (weaponState->validHit1)
   {
     state->score1 += 1;
+    writeScore(state->score1, 1);
     Serial.println("player 1 scored");
     // signal red light
   }
@@ -449,6 +471,7 @@ void signalHit()
   if (weaponState->validHit2)
   {
     state->score2 += 1;
+    writeScore(state->score2, 2);
     Serial.println("player 2 scored");
     // signal green light
   }
@@ -468,7 +491,7 @@ void signalHit()
 void resetValues()
 {
   Serial.println("reset");
-  
+
 
   weaponState->lockedOut = false;
 
@@ -527,8 +550,8 @@ void parseCommand(String cmd)
 {
   if (cmd == "reset\n" || cmd == "e619ff00") {
     state->inAction = false;
-    state->score1 = false;
-    state->score2 = false;
+    state->score1 = 0;
+    state->score2 = 0;
     currentTime = 0;
     resetValues();
     if (cmd == "e619ff00") {
@@ -554,6 +577,7 @@ void parseCommand(String cmd)
     state->score1 += 1;
     // write new score to SCORE1
     Serial.println("inc1");
+    writeScore(state->score1, 1);
     if (cmd == "f708ff00")
     {
       hc06.write("inc1\n");
@@ -564,6 +588,7 @@ void parseCommand(String cmd)
     state->score2 += 1;
     // write new score to SCORE2
     Serial.println("inc2");
+    writeScore(state->score2, 2);
     if (cmd == "a55aff00")
     {
       hc06.write("inc2\n");
@@ -577,6 +602,7 @@ void parseCommand(String cmd)
       // write new score to SCORE1
     }
     Serial.println("dec1");
+    writeScore(state->score1, 1);
     if (cmd == "bd42ff00")
     {
       hc06.write("dec1\n");
@@ -590,6 +616,7 @@ void parseCommand(String cmd)
       // write new score to SCORE2
     }
     Serial.println("dec2");
+    writeScore(state->score2, 2);
     if (cmd == "b54aff00")
     {
       hc06.write("dec2\n");
@@ -666,4 +693,101 @@ void parseCommand(String cmd)
   else {
     Serial.println(cmd);
   }
+}
+/*
+  digit is 0-19
+  display is 1 or 2
+*/
+void writeScore(int digit, int display) {
+  Serial.println(digit);
+  int srclk = SRCLK1;
+  int rclk = RCLK1;
+  if (display == 2) {
+    srclk = SRCLK2;
+    rclk = RCLK2;
+  }
+  if (digit > 19) {
+    digit = 19;
+  }
+  uint8_t output = 0b00000000; //8 bits to be shifted. The first bit is the 1 on the first display
+  switch (digit) {
+    case 0:
+      output = 0b00111111;
+      break;
+    case 10:
+      output = 0b10111111;
+      break;
+    case 1:
+      output = 0b00001001;
+      break;
+    case 11:
+      output = 0b10001001;
+      break;
+    case 2:
+      output = 0b01011110;
+      break;
+    case 12:
+      output = 0b11011110;
+      break;
+    case 3:
+      output = 0b01011011;
+      break;
+    case 13:
+      output = 0b11011011;
+      break;
+    case 4:
+      output = 0b01101001;
+      break;
+    case 14:
+      output = 0b11101001;
+      break;
+    case 5:
+      output = 0b01110011;
+      break;
+    case 15:
+      output = 0b11110011;
+      break;
+    case 6:
+      output = 0b01110111;
+      break;
+    case 16:
+      output = 0b11110111;
+      break;
+    case 7:
+      output = 0b00011001;
+      break;
+    case 17:
+      output = 0b10011001;
+      break;
+    case 8:
+      output = 0b01111111;
+      break;
+    case 18:
+      output = 0b11111111;
+      break;
+    case 9:
+      output = 0b01111011;
+      break;
+    case 19:
+      output = 0b11111011;
+      break;
+
+    default:
+      break;
+  }
+  for (int i = 0; i < 8; i++) {
+    uint8_t data = 0b00000001 & output; //isolate the rightmost bit
+    Serial.println(data);
+    digitalWrite(DATA, data);
+    delayMicroseconds(1);
+    digitalWrite(srclk, 1);
+    delayMicroseconds(1);
+    digitalWrite(srclk, 0);
+    output = output >> 1;
+    delayMicroseconds(1);
+  }
+  digitalWrite(rclk, 1);
+  delayMicroseconds(1);
+  digitalWrite(rclk, 0);
+
 }
