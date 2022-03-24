@@ -43,12 +43,20 @@
 #define SRCLK2 8
 #define RCLK2 9
 
+#define RED 10
+#define GREEN 11
+#define WHITE_1 12
+#define WHITE_2 13
 
-#define BUZZER 13
+#define BUZZER 0
+
 #define WEAPON_1_PINA A0 // Lame   A pin - Analog (Epee return path)
 #define WEAPON_1_PINB A1 // Weapon A pin - Analog
 #define WEAPON_2_PINA A2 // Lame   B pin - Analog (Epee return path)
 #define WEAPON_2_PINB A3 // Weapon B pin - Analog
+
+#define TIMER_SCL A5
+#define TIMER_SDA A4
 
 #define FOIL 0
 #define EPEE 1
@@ -457,35 +465,45 @@ void signalHit()
   Serial.println(offTargetVoltageHighB[state->mode]);
   Serial.println(state->mode);
 #endif
+  digitalWrite(BUZZER, 1);
   if (weaponState->validHit1)
   {
-    state->score1 += 1;
-    writeScore(state->score1, 1);
+    if (state->mode != EPEE){
+      state->score1 += 1;
+      writeScore(state->score1, 1);
+    }
+    
     Serial.println("player 1 scored");
-    // signal red light
+    digitalWrite(RED, 1);
   }
   else if (weaponState->offTarget1)
   {
     Serial.println("player 1 off-target");
-    // signal left white
+    digitalWrite(WHITE_1, 1);
   }
   if (weaponState->validHit2)
   {
-    state->score2 += 1;
-    writeScore(state->score2, 2);
+    if (state->mode != EPEE){
+      state->score2 += 1;
+      writeScore(state->score2, 2);
+    }
+   
     Serial.println("player 2 scored");
-    // signal green light
+    digitalWrite(GREEN, 1);
   }
   else if (weaponState->offTarget2)
   {
     Serial.println("player 2 off target");
-    // signal right white
+    digitalWrite(WHITE_2, 1);
   }
 
   delay(BUZZER_TIME); // wait before turning off the buzzer
-  // turn off buzzer
+  digitalWrite(BUZZER);
   delay(LIGHT_TIME); // wait before turning off the lights
-  // turn off all lights
+  digitalWrite(RED, 0);
+  digitalWrite(GREEN, 0);
+  digitalWrite(WHITE_1, 0);
+  digitalWrite(WHITE_2, 0);
   resetValues();
 }
 
