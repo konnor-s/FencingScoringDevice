@@ -9,10 +9,13 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.Toolbar;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
+import androidx.core.view.ViewCompat;
 
 import android.Manifest;
 import android.annotation.SuppressLint;
+import android.content.Context;
 import android.content.DialogInterface;
+import android.content.res.ColorStateList;
 import android.graphics.Color;
 import android.os.Bundle;
 import android.os.CountDownTimer;
@@ -59,9 +62,9 @@ public class MainActivity extends AppCompatActivity {
     private ToggleButton mute;
     private CountDownTimer countDown;
     private TextView mode;
-    private ToggleButton onoff;
     private Button playpause;
     private Button resetButton;
+
     // Function to check and request permission
     public void checkPermission(String permission, int requestCode) {
         // Checking if permission is not granted
@@ -75,6 +78,21 @@ public class MainActivity extends AppCompatActivity {
     public void openDeviceList() {
         Intent intent = new Intent(MainActivity.this, SelectDeviceActivity.class);
         startActivity(intent);
+    }
+    private void setPause(){
+        playpause.setText("pause");
+        ViewCompat.setBackgroundTintList(playpause, ContextCompat.getColorStateList(this, android.R.color.holo_orange_light));
+        inAction = true;
+    }
+    private void setPlay(){
+        playpause.setText("play");
+        ViewCompat.setBackgroundTintList(playpause, ContextCompat.getColorStateList(this, android.R.color.holo_green_light));
+        inAction = false;
+    }
+    private void setDash(){
+        playpause.setText("---");
+        ViewCompat.setBackgroundTintList(playpause, ContextCompat.getColorStateList(this, android.R.color.darker_gray));
+        inAction = false;
     }
 
     @SuppressLint("SetTextI18n")
@@ -95,7 +113,6 @@ public class MainActivity extends AppCompatActivity {
         time = findViewById(R.id.time);
         mute = findViewById(R.id.mute);
         mode = findViewById(R.id.mode);
-        onoff = findViewById(R.id.onoff);
         resetButton = findViewById(R.id.resetButton);
         ImageButton increment1 = findViewById(R.id.increment1);
         ImageButton decrement1 = findViewById(R.id.decrement1);
@@ -157,6 +174,17 @@ public class MainActivity extends AppCompatActivity {
                                 break;
                             }
                             case "mode": {
+                                try {
+                                    countDown.cancel();
+                                } catch (NullPointerException ignored) {
+                                }
+
+                                setDash();
+                                time.setText("00:00");
+                                minutes = 0;
+                                seconds = 0;
+                                score1.setText("0");
+                                score2.setText("0");
                                 if (mode.getText().equals("Foil")) {
                                     mode.setText("Epee");
                                 } else if (mode.getText().equals("Epee")) {
@@ -174,6 +202,7 @@ public class MainActivity extends AppCompatActivity {
                                 inAction = true;
                                 minutes = 1;
                                 seconds = 0;
+                                setPause();
                                 countDown = new CountDownTimer(600000, 1000) {
                                     public void onTick(long millis) {
                                         if (seconds == 0) {
@@ -194,7 +223,7 @@ public class MainActivity extends AppCompatActivity {
 
                                     public void onFinish() {
                                         time.setText(R.string.time);
-                                        playpause.setText("---");
+                                        setDash();
                                         inAction = false;
                                         this.cancel();
                                     }
@@ -209,6 +238,7 @@ public class MainActivity extends AppCompatActivity {
                                 inAction = true;
                                 minutes = 3;
                                 seconds = 0;
+                                setPause();
                                 countDown = new CountDownTimer(1800000, 1000) {
 
                                     public void onTick(long millis) {
@@ -229,7 +259,7 @@ public class MainActivity extends AppCompatActivity {
 
                                     public void onFinish() {
                                         time.setText(R.string.time);
-                                        playpause.setText("---");
+                                        setDash();
                                         inAction = false;
                                         this.cancel();
                                     }
@@ -242,13 +272,11 @@ public class MainActivity extends AppCompatActivity {
                                     countDown.cancel();
                                 } catch (NullPointerException ignored) {
                                 }
-                                String timetxt = time.getText().toString();
-                                String[] parts = timetxt.split(":");
-                                minutes = Integer.parseInt(parts[0]);
-                                seconds = Integer.parseInt(parts[1]);
+                                setPause();
+                                seconds+=1;
                                 int timeMillis = ((minutes * 60) + seconds) * 1000;
                                 inAction = true;
-                                countDown = new CountDownTimer(timeMillis+1000, 1000) {
+                                countDown = new CountDownTimer(timeMillis, 1000) {
                                     @Override
                                     public void onTick(long l) {
                                         if (seconds == 0) {
@@ -269,13 +297,13 @@ public class MainActivity extends AppCompatActivity {
                                     @Override
                                     public void onFinish() {
                                         time.setText(R.string.time);
-                                        playpause.setText("---");
+                                        setDash();
                                         inAction = false;
                                         this.cancel();
                                     }
                                 };
                                 countDown.start();
-                                playpause.setText("pause");
+
                                 break;
                             }
                             case "reset": {
@@ -287,7 +315,7 @@ public class MainActivity extends AppCompatActivity {
                                 time.setText("00:00");
                                 score1.setText("0");
                                 score2.setText("0");
-                                playpause.setText("---");
+                                setDash();
                                 inAction = false;
                             }
 
@@ -308,7 +336,7 @@ public class MainActivity extends AppCompatActivity {
                                     time.setText(min_sec);
                                     if (minutes != 0 && seconds != 0) {
                                         inAction = false;
-                                        playpause.setText("play");
+                                        setPlay();
                                     }
                                 } else {
                                     Log.e("msg", "Invalid message");
@@ -335,10 +363,13 @@ public class MainActivity extends AppCompatActivity {
                                 countDown.cancel();
                             } catch (NullPointerException ignored) {
                             }
+                            setDash();
                             time.setText("00:00");
+                            minutes = 0;
+                            seconds = 0;
                             score1.setText("0");
                             score2.setText("0");
-                            playpause.setText("---");
+                            setDash();
                             inAction = false;
                             connectedThread.write("reset\n");
                         }
@@ -364,8 +395,15 @@ public class MainActivity extends AppCompatActivity {
                     @Override
                     public void onClick(DialogInterface dialogInterface, int i) {
                         //set scores to zero and reset time
-                        countDown.cancel();
+                        try {
+                            countDown.cancel();
+                        } catch (NullPointerException ignored) {
+                        }
+
+                        setDash();
                         time.setText("00:00");
+                        minutes = 0;
+                        seconds = 0;
                         score1.setText("0");
                         score2.setText("0");
                         connectedThread.write("reset\n");
@@ -401,15 +439,6 @@ public class MainActivity extends AppCompatActivity {
             }
         });
 
-
-        onoff.setOnClickListener(view -> {
-            if (connectedThread != null && connectedThread.isConnected()) {
-                String btnState = onoff.getText().toString().toLowerCase();
-                connectedThread.write("Hello\n");
-            } else {
-                openDeviceList();
-            }
-        });
 
         increment1.setOnClickListener(view -> {
             if (connectedThread != null && connectedThread.isConnected()) {
@@ -470,6 +499,7 @@ public class MainActivity extends AppCompatActivity {
             }
         });
         playpause.setOnClickListener(view -> {
+
             if (connectedThread != null && connectedThread.isConnected()) {
                 try {
                     countDown.cancel();
@@ -477,20 +507,17 @@ public class MainActivity extends AppCompatActivity {
                     Log.e("playpause", "Timer couldn't cancel");
                 }
                 Log.i("inAction", String.valueOf(inAction));
-                if (inAction) // timer is going
+                if (playpause.getText().toString().equals("pause")) // timer is going
                 {
                     inAction = false;
                     connectedThread.write("pause\n");
-                    playpause.setText("play");
-                } else if (!inAction) //timer is not going and is not at zero
+                    setPlay();
+                } else if (playpause.getText().toString().equals("play")) //timer is not going and is not at zero
                 {
                     Log.i("!inAction", "!inAction");
-                    String timetxt = time.getText().toString();
-                    String[] parts = timetxt.split(":");
-                    minutes = Integer.parseInt(parts[0]);
-                    seconds = Integer.parseInt(parts[1]);
+                    seconds += 1;
                     int timeMillis = ((minutes * 60) + seconds) * 1000;
-
+                    setPause();
                     countDown = new CountDownTimer(timeMillis, 1000) {
                         @Override
                         public void onTick(long l) {
@@ -512,13 +539,14 @@ public class MainActivity extends AppCompatActivity {
                         @Override
                         public void onFinish() {
                             time.setText(R.string.time);
-                            playpause.setText("---");
+                            setDash();
+                            inAction = false;
                             this.cancel();
                         }
                     };
                     countDown.start();
                     connectedThread.write("play\n");
-                    playpause.setText("pause");
+
                 }
             }
         });
@@ -529,6 +557,7 @@ public class MainActivity extends AppCompatActivity {
                 } catch (NullPointerException ignored) {
                 }
                 inAction = true;
+                setPause();
                 countDown = new CountDownTimer(600000, 1000) {
                     private int minutes = 1;
                     private int seconds = 0;
@@ -547,13 +576,14 @@ public class MainActivity extends AppCompatActivity {
                                 minutes, seconds);
 
                         time.setText(min_sec);
-                        playpause.setText("pause");
+
 
                     }
 
                     public void onFinish() {
                         time.setText(R.string.time);
-                        playpause.setText("---");
+                        setDash();
+
                         inAction = false;
                         this.cancel();
                     }
@@ -570,6 +600,7 @@ public class MainActivity extends AppCompatActivity {
                 } catch (NullPointerException ignored) {
                 }
                 inAction = true;
+                setPause();
                 countDown = new CountDownTimer(1800000, 1000) {
                     private int minutes = 3;
                     private int seconds = 0;
@@ -588,12 +619,12 @@ public class MainActivity extends AppCompatActivity {
                                 minutes, seconds);
 
                         time.setText(min_sec);
-                        playpause.setText("pause");
+
                     }
 
                     public void onFinish() {
                         time.setText(R.string.time);
-                        playpause.setText("---");
+                        setDash();
                         inAction = false;
                         this.cancel();
                     }

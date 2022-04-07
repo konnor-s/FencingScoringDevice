@@ -65,9 +65,9 @@
 Adafruit_7segment matrix = Adafruit_7segment();
 
 // depress time is the amount of time needed to maintain valid contact for a hit to count
-const long depress[] = {300000, 45000, 120000}; // foil, epee, sabre
+const unsigned long depress[] = {300000, 45000, 120000}; // foil, epee, sabre
 // lockout is the amount of time after a hit to allow the other person to get a hit, before the round ends
-const long lockout[] = {14000, 2000, 1000};
+const unsigned long lockout[] = {14000, 2000, 1000};
 const int validVoltageLow[] = {420, 420, 240}; // its the same voltage for pin A and B on a valid hit
 const int validVoltageHigh[] = {600, 600, 420};
 
@@ -93,8 +93,8 @@ struct State
 
 struct WeaponState
 {
-  long depressTime1 = 0;
-  long depressTime2 = 0;
+  unsigned long depressTime1 = 0;
+  unsigned long depressTime2 = 0;
   bool lockedOut = false;
   int weapon1_B = 0;
   int weapon2_B = 0;
@@ -204,14 +204,6 @@ void loop()
 {
   while (1)
   {
-    // if (j % 1000000000 == 0) {
-    // Serial.print(".");
-
-    //}
-    //if (j > 10000000000) {
-    //j = 0;
-    //Serial.println(".");
-    //}
     if (state->inAction)
     {
       weaponState->weapon1_B = analogRead(WEAPON_1_PINB);
@@ -299,7 +291,7 @@ void writeTime()
 void testBlades()
 {
 
-  long now = micros();
+  unsigned long now = micros();
 
   int *weapon1, *weapon2, *target1, *target2;
   if (state->mode == EPEE)
@@ -470,6 +462,7 @@ void signalHit()
   {
     if (state->mode != EPEE){
       state->score1 += 1;
+      hc06.write("inc1\n");
       writeScore(state->score1, 1);
     }
     
@@ -485,6 +478,7 @@ void signalHit()
   {
     if (state->mode != EPEE){
       state->score2 += 1;
+      hc06.write("inc2\n");
       writeScore(state->score2, 2);
     }
    
@@ -498,7 +492,7 @@ void signalHit()
   }
 
   delay(BUZZER_TIME); // wait before turning off the buzzer
-  digitalWrite(BUZZER);
+  digitalWrite(BUZZER, 0);
   delay(LIGHT_TIME); // wait before turning off the lights
   digitalWrite(RED, 0);
   digitalWrite(GREEN, 0);
@@ -514,7 +508,7 @@ void resetValues()
 
   weaponState->lockedOut = false;
 
-  long now = micros();
+  unsigned long now = micros();
 
   weaponState->depressTime1 = now;
   weaponState->depressed1 = false;
@@ -695,14 +689,20 @@ void parseCommand(String cmd)
     if (state->mode == FOIL)
     {
       state->mode = EPEE;
+      matrix.print("EPEE");
+      matrix.writeDisplay();
     }
     else if (state->mode == EPEE)
     {
       state->mode = SABRE;
+      matrix.print("SABr");
+      matrix.writeDisplay();      
     }
     else
     {
       state->mode = FOIL;
+      matrix.print("FOIL");
+      matrix.writeDisplay();      
     }
     if (cmd == "b946ff00")
     {
