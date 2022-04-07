@@ -421,6 +421,9 @@ public class MainActivity extends AppCompatActivity {
                 openDeviceList();
             }
         });
+        increment1.setOnClickListener(view -> {
+
+        });
         increment2.setOnClickListener(view -> {
             if (connectedThread != null && connectedThread.isConnected()) {
                 int score = Integer.parseInt(score2.getText().toString());
