@@ -3,26 +3,29 @@
     package="com.example.fencingremotecontroller">
 
     <uses-permission android:name="android.permission.BLUETOOTH_CONNECT" />
-
-    <uses-permission android:name="android.permission.BLUETOOTH"
+    <uses-permission
+        android:name="android.permission.BLUETOOTH"
         android:maxSdkVersion="30" />
-    <uses-permission android:name="android.permission.BLUETOOTH_ADMIN"
+    <uses-permission
+        android:name="android.permission.BLUETOOTH_ADMIN"
         android:maxSdkVersion="30" />
-
-    <!-- Needed only if your app looks for Bluetooth devices.
+    <!--
+ Needed only if your app looks for Bluetooth devices.
          If your app doesn't use Bluetooth scan results to derive physical
          location information, you can strongly assert that your app
-         doesn't derive physical location. -->
+         doesn't derive physical location.
+    -->
     <uses-permission android:name="android.permission.BLUETOOTH_SCAN" />
-
-    <!-- Needed only if your app makes the device discoverable to Bluetooth
-         devices. -->
+    <!--
+ Needed only if your app makes the device discoverable to Bluetooth
+         devices.
+    -->
     <uses-permission android:name="android.permission.BLUETOOTH_ADVERTISE" />
-
-    <!-- Needed only if your app communicates with already-paired Bluetooth
-         devices. -->
+    <!--
+ Needed only if your app communicates with already-paired Bluetooth
+         devices.
+    -->
     <uses-permission android:name="android.permission.BLUETOOTH_CONNECT" />
-
 
     <application
         android:allowBackup="true"
@@ -31,9 +34,13 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.FencingRemoteController">
         <activity
+            android:name=".InitialConnectionActivity"
+            android:exported="false"
+            android:label="@string/title_activity_initial_connection"
+            android:theme="@style/Theme.FencingRemoteController.NoActionBar" />
+        <activity
             android:name=".SelectDeviceActivity"
-            android:theme="@style/AppTheme">
-        </activity>
+            android:theme="@style/AppTheme"></activity>
         <activity
             android:name=".MainActivity"
             android:exported="true">
