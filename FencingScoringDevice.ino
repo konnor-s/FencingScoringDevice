@@ -184,21 +184,7 @@ void setup()
   matrix.writeDigitNum(4, 0);
   matrix.writeDisplay();
 
-  int q = 0;
-  for (int i = 0; i < 8; i++) {
-
-
-    digitalWrite(DATA, 1);
-    delayMicroseconds(1);
-    digitalWrite(SRCLK1, 1);
-    delayMicroseconds(1);
-    digitalWrite(SRCLK1, 0);
-
-    delayMicroseconds(1);
-  }
-  digitalWrite(RCLK1, 1);
-  delayMicroseconds(1);
-  digitalWrite(RCLK1, 0);
+  resetValues();
 }
 void loop()
 {
@@ -457,7 +443,9 @@ void signalHit()
   Serial.println(offTargetVoltageHighB[state->mode]);
   Serial.println(state->mode);
 #endif
-  digitalWrite(BUZZER, 1);
+  if (state->muted){
+    digitalWrite(BUZZER, 1);
+  }
   if (weaponState->validHit1)
   {
     if (state->mode != EPEE){
@@ -519,6 +507,14 @@ void resetValues()
   weaponState->offTarget1 = false;
   weaponState->validHit2 = false;
   weaponState->offTarget2 = false;
+
+  writeScore(0,1);
+  writeScore(0,2);
+
+  matrix.writeDigitNum(1, 0);
+  matrix.writeDigitNum(3, 0);
+  matrix.writeDigitNum(4, 0);
+  matrix.writeDisplay();
 }
 void pause()
 {
