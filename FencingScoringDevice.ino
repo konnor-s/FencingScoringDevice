@@ -33,6 +33,8 @@
 #include "TimerInterrupt.h"
 #define TIMER_INTERVAL_MS 1000
 
+
+#define BUZZER 0
 #define HC06_RX 3
 #define HC06_TX 2
 #define IR_RECV 4
@@ -46,9 +48,9 @@
 #define RED 10
 #define GREEN 11
 #define WHITE_1 12
-#define WHITE_2 13
+#define WHITE_2 1
 
-#define BUZZER 0
+
 
 #define WEAPON_1_PINA A0 // Lame   A pin - Analog (Epee return path)
 #define WEAPON_1_PINB A1 // Weapon A pin - Analog
@@ -124,7 +126,7 @@ void TimerHandler()
     currentTime -= 1;
     write_time = true;
     // writeTime();
-    Serial.println(currentTime);
+    //Serial.println(currentTime);
 
 
     if (currentTime == 0)
@@ -149,12 +151,20 @@ void setup()
   pinMode(SRCLK2, OUTPUT);
   pinMode(RCLK2, OUTPUT);
   pinMode(BUZZER, OUTPUT);
+  pinMode(RED, OUTPUT);
+  pinMode(GREEN, OUTPUT);
+  pinMode(WHITE_1, OUTPUT);
+  pinMode(WHITE_2, OUTPUT);
+  digitalWrite(GREEN, 0);
+  digitalWrite(RED, 0);
+  digitalWrite(WHITE_1, 0);
+  digitalWrite(WHITE_2, 0);
 
   //Instantiate the struct variables. (they don't instantiate within the definition)
   state->inAction = false;
   state->score1 = 0;
   state->score2 = 0;
-  state->mode = EPEE;
+  state->mode = SABRE;
   state->muted = false;
   weaponState->depressTime1 = 0;
   weaponState->depressTime2 = 0;
@@ -170,12 +180,12 @@ void setup()
   weaponState->validHit2 = false;
   weaponState->offTarget2 = false;
 
-  Serial.begin(9600);
+  ////Serial.begin(9600);
   hc06.begin(9600);
   IrReceiver.begin(IR_RECV, ENABLE_LED_FEEDBACK);
   ITimer1.init();
   ITimer1.attachInterruptInterval(TIMER_INTERVAL_MS, TimerHandler);
-
+  resetValues();
   matrix.begin(0x70);
   matrix.writeDigitRaw(2, 0x02);
 
@@ -184,12 +194,15 @@ void setup()
   matrix.writeDigitNum(4, 0);
   matrix.writeDisplay();
 
-  resetValues();
+  resetMatch();
+
+  
 }
 void loop()
 {
   while (1)
   {
+   
     if (state->inAction)
     {
       weaponState->weapon1_B = analogRead(WEAPON_1_PINB);
@@ -221,7 +234,7 @@ void loop()
 
       writeTime();
       write_time = false;
-      Serial.println("write");
+      //Serial.println("write");
     }
   }
 }
@@ -255,7 +268,7 @@ void decodeBluetooth()
 
 void writeTime()
 {
-  // Serial.println(currentTime);
+  // //Serial.println(currentTime);
   // write currentTime to the timer LEDs
 
   matrix.writeDigitRaw(2, 0x02);
@@ -270,8 +283,8 @@ void writeTime()
   matrix.writeDigitNum(3, digitArray[0]);
   matrix.writeDigitNum(4, digitArray[1]);
   matrix.writeDisplay();
-  Serial.println(digitArray[0]);
-  Serial.println(digitArray[1]);
+  //Serial.println(digitArray[0]);
+  //Serial.println(digitArray[1]);
 }
 
 void testBlades()
@@ -298,14 +311,14 @@ void testBlades()
   }
 #ifdef DEBUG_VOLTAGE
   if (j % 10000000 == 0) {
-    Serial.print("1A:");
-    Serial.println(weaponState->weapon1_A);
-    Serial.print("1B:");
-    Serial.println(weaponState->weapon1_B);
-    Serial.print("2A:");
-    Serial.println(weaponState->weapon2_A);
-    Serial.print("2B:");
-    Serial.println(weaponState->weapon2_B);
+    //Serial.print("1A:");
+    //Serial.println(weaponState->weapon1_A);
+    //Serial.print("1B:");
+    //Serial.println(weaponState->weapon1_B);
+    //Serial.print("2A:");
+    //Serial.println(weaponState->weapon2_A);
+    //Serial.print("2B:");
+    //Serial.println(weaponState->weapon2_B);
   }
   if (j > 100000000) {
     j = 0;
@@ -424,58 +437,58 @@ void testBlades()
 void signalHit()
 {
 
-  Serial.println("signalHit");
+  //Serial.println("signalHit");
   pause(); // sets inAction to false and sends pause command via bluetooth
 
   // sound buzzer
 #ifdef DEBUG_VOLTAGE
-  Serial.print("1A:");
-  Serial.println(weaponState->weapon1_A);
-  Serial.print("1B:");
-  Serial.println(weaponState->weapon1_B);
-  Serial.print("2A:");
-  Serial.println(weaponState->weapon2_A);
-  Serial.print("2B:");
-  Serial.println(weaponState->weapon2_B);
-  Serial.println(offTargetVoltageLowA[state->mode]);
-  Serial.println(offTargetVoltageHighA[state->mode]);
-  Serial.println(offTargetVoltageLowB[state->mode]);
-  Serial.println(offTargetVoltageHighB[state->mode]);
-  Serial.println(state->mode);
+  //Serial.print("1A:");
+  //Serial.println(weaponState->weapon1_A);
+  //Serial.print("1B:");
+  //Serial.println(weaponState->weapon1_B);
+  //Serial.print("2A:");
+  //Serial.println(weaponState->weapon2_A);
+  //Serial.print("2B:");
+  //Serial.println(weaponState->weapon2_B);
+  //Serial.println(offTargetVoltageLowA[state->mode]);
+  //Serial.println(offTargetVoltageHighA[state->mode]);
+  //Serial.println(offTargetVoltageLowB[state->mode]);
+  //Serial.println(offTargetVoltageHighB[state->mode]);
+  //Serial.println(state->mode);
 #endif
-  if (state->muted){
+  if (!state->muted){
     digitalWrite(BUZZER, 1);
   }
   if (weaponState->validHit1)
   {
-    if (state->mode != EPEE){
+    if (state->mode == EPEE){
       state->score1 += 1;
       hc06.write("inc1\n");
       writeScore(state->score1, 1);
     }
     
-    Serial.println("player 1 scored");
-    digitalWrite(RED, 1);
+    //Serial.println("player 1 scored");
+    digitalWrite(GREEN, 1);
   }
   else if (weaponState->offTarget1)
   {
-    Serial.println("player 1 off-target");
+    //Serial.println("player 1 off-target");
     digitalWrite(WHITE_1, 1);
   }
   if (weaponState->validHit2)
   {
-    if (state->mode != EPEE){
+    if (state->mode == EPEE){
       state->score2 += 1;
       hc06.write("inc2\n");
       writeScore(state->score2, 2);
     }
    
-    Serial.println("player 2 scored");
-    digitalWrite(GREEN, 1);
+    //Serial.println("player 2 scored");
+    digitalWrite(RED, 1);
   }
   else if (weaponState->offTarget2)
   {
-    Serial.println("player 2 off target");
+    //Serial.println("player 2 off target");
     digitalWrite(WHITE_2, 1);
   }
 
@@ -491,9 +504,9 @@ void signalHit()
 
 void resetValues()
 {
-  Serial.println("reset");
+  //Serial.println("reset");
 
-
+  state->inAction = false;
   weaponState->lockedOut = false;
 
   unsigned long now = micros();
@@ -508,9 +521,21 @@ void resetValues()
   weaponState->validHit2 = false;
   weaponState->offTarget2 = false;
 
+  digitalWrite(GREEN, 0);
+  digitalWrite(RED, 0);
+  digitalWrite(WHITE_1, 0);
+  digitalWrite(WHITE_2, 0);
+  
+}
+void resetMatch(){
+  resetValues();
+  currentTime = 0;
+  state->score1 = 0;
+  state->score2 = 0;
   writeScore(0,1);
   writeScore(0,2);
-
+  write_time = true;
+  matrix.writeDigitNum(0, 0);
   matrix.writeDigitNum(1, 0);
   matrix.writeDigitNum(3, 0);
   matrix.writeDigitNum(4, 0);
@@ -518,7 +543,7 @@ void resetValues()
 }
 void pause()
 {
-  Serial.println("pause");
+  //Serial.println("pause");
   state->inAction = false;
   if (currentTime > 99)
   {
@@ -559,14 +584,11 @@ void parseCommand(String cmd)
 {
   if (cmd == "reset\n" || cmd == "e619ff00") {
     state->inAction = false;
-    state->score1 = 0;
-    state->score2 = 0;
-    currentTime = 0;
-    resetValues();
+    resetMatch();
     if (cmd == "e619ff00") {
       hc06.write("reset\n");
     }
-    Serial.println("reset");
+    //Serial.println("reset");
   }
   else if (state->inAction == false && (cmd == "play\n" || cmd == "bb44ff00") && (currentTime > 0))
   {
@@ -575,7 +597,7 @@ void parseCommand(String cmd)
     {
       hc06.write("play\n");
     }
-    Serial.println("play");
+    //Serial.println("play");
   }
   else if (state->inAction == true && (cmd == "pause\n" || cmd == "bb44ff00"))
   {
@@ -585,7 +607,7 @@ void parseCommand(String cmd)
   {
     state->score1 += 1;
     // write new score to SCORE1
-    Serial.println("inc1");
+    //Serial.println("inc1");
     writeScore(state->score1, 1);
     if (cmd == "f708ff00")
     {
@@ -596,7 +618,7 @@ void parseCommand(String cmd)
   {
     state->score2 += 1;
     // write new score to SCORE2
-    Serial.println("inc2");
+    //Serial.println("inc2");
     writeScore(state->score2, 2);
     if (cmd == "a55aff00")
     {
@@ -610,7 +632,7 @@ void parseCommand(String cmd)
       state->score1 -= 1;
       // write new score to SCORE1
     }
-    Serial.println("dec1");
+    //Serial.println("dec1");
     writeScore(state->score1, 1);
     if (cmd == "bd42ff00")
     {
@@ -624,7 +646,7 @@ void parseCommand(String cmd)
       state->score2 -= 1;
       // write new score to SCORE2
     }
-    Serial.println("dec2");
+    //Serial.println("dec2");
     writeScore(state->score2, 2);
     if (cmd == "b54aff00")
     {
@@ -641,14 +663,14 @@ void parseCommand(String cmd)
     {
       state->muted == 1;
     }
-    Serial.println("mute");
+    //Serial.println("mute");
   }
 
   else if (cmd == "timer1\n" || cmd == "f30cff00")
   {
     currentTime = 60;
     state->inAction = true;
-    Serial.println("timer1");
+    //Serial.println("timer1");
     if (cmd == "f30cff00")
     {
       hc06.write("timer1\n");
@@ -658,7 +680,7 @@ void parseCommand(String cmd)
   {
     currentTime = 180;
     state->inAction = true;
-    Serial.println("timer3");
+    //Serial.println("timer3");
     if (cmd == "a15eff00")
     {
       hc06.write("timer3\n");
@@ -666,38 +688,68 @@ void parseCommand(String cmd)
   }
   else if (cmd == "foil\n")
   {
-    state->mode = FOIL;
-    Serial.println("foil");
+    state->mode = EPEE;
+    resetMatch();
+    matrix.writeDigitAscii(0,'E');
+    matrix.writeDigitAscii(1,'P');
+    matrix.writeDigitAscii(3,'E');
+    matrix.writeDigitAscii(4,'E');
+    matrix.writeDisplay();
+    ////Serial.println("foil");
   }
   else if (cmd == "epee\n")
   {
-    state->mode = EPEE;
-    Serial.println("epee");
+    state->mode = SABRE;
+    resetMatch();
+    matrix.writeDigitAscii(0,'S');
+    matrix.writeDigitAscii(1,'A');
+    matrix.writeDigitAscii(3,'b');
+    matrix.writeDigitAscii(4,'r');
+    matrix.writeDisplay();
+    ////Serial.println("epee");
   }
   else if (cmd == "sabre\n")
   {
-    state->mode = SABRE;
-    Serial.println("sabre");
+    state->mode = FOIL;
+    resetMatch();
+    matrix.writeDigitAscii(0,'F');
+    matrix.writeDigitAscii(1,'O');
+    matrix.writeDigitAscii(3,'I');
+    matrix.writeDigitAscii(4,'L');
+    matrix.writeDisplay();
+    ////Serial.println("sabre");
   }
   else if (cmd == "mode\n" || cmd == "b946ff00")
   {
-    Serial.println("mode");
+    ////Serial.println("mode");
     if (state->mode == FOIL)
     {
       state->mode = EPEE;
-      matrix.print("EPEE");
+      resetMatch();
+      matrix.writeDigitAscii(0,'E');
+      matrix.writeDigitAscii(1,'P');
+      matrix.writeDigitAscii(3,'E');
+      matrix.writeDigitAscii(4,'E');
       matrix.writeDisplay();
     }
     else if (state->mode == EPEE)
     {
       state->mode = SABRE;
-      matrix.print("SABr");
+      resetMatch();
+      matrix.writeDigitAscii(0,'S');
+      matrix.writeDigitAscii(1,'A');
+      matrix.writeDigitAscii(3,'b');
+      matrix.writeDigitAscii(4,'r');
       matrix.writeDisplay();      
     }
     else
     {
       state->mode = FOIL;
-      matrix.print("FOIL");
+      resetMatch();
+      matrix.writeDigitAscii(0,'F');
+      matrix.writeDigitAscii(1,'O');
+      matrix.writeDigitAscii(3,'I');
+      matrix.writeDigitAscii(4,'L');
       matrix.writeDisplay();      
     }
     if (cmd == "b946ff00")
@@ -706,7 +758,7 @@ void parseCommand(String cmd)
     }
   }
   else {
-    Serial.println(cmd);
+    //Serial.println(cmd);
   }
 }
 /*
@@ -714,7 +766,7 @@ void parseCommand(String cmd)
   display is 1 or 2
 */
 void writeScore(int digit, int display) {
-  Serial.println(digit);
+  //Serial.println(digit);
   int srclk = SRCLK1;
   int rclk = RCLK1;
   if (display == 2) {
@@ -792,7 +844,7 @@ void writeScore(int digit, int display) {
   }
   for (int i = 0; i < 8; i++) {
     uint8_t data = 0b00000001 & output; //isolate the rightmost bit
-    Serial.println(data);
+    //Serial.println(data);
     digitalWrite(DATA, data);
     delayMicroseconds(1);
     digitalWrite(srclk, 1);
