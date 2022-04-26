@@ -173,6 +173,56 @@ public class MainActivity extends AppCompatActivity {
                                 score2.setText(String.valueOf(newScore));
                                 break;
                             }
+                            case "foil": {
+                                try {
+                                    countDown.cancel();
+                                } catch (NullPointerException ignored) {
+                                }
+
+                                setDash();
+                                time.setText("00:00");
+                                minutes = 0;
+                                seconds = 0;
+                                score1.setText("0");
+                                score2.setText("0");
+                                
+                                mode.setText("Foil");
+                                
+                                break;
+                            }
+                            case "epee": {
+                                try {
+                                    countDown.cancel();
+                                } catch (NullPointerException ignored) {
+                                }
+
+                                setDash();
+                                time.setText("00:00");
+                                minutes = 0;
+                                seconds = 0;
+                                score1.setText("0");
+                                score2.setText("0");
+                                mode.setText("Epee");
+                               
+                                break;
+                            }
+                            case "sabre": {
+                                try {
+                                    countDown.cancel();
+                                } catch (NullPointerException ignored) {
+                                }
+
+                                setDash();
+                                time.setText("00:00");
+                                minutes = 0;
+                                seconds = 0;
+                                score1.setText("0");
+                                score2.setText("0");
+                                
+                                mode.setText("Sabre");
+                               
+                                break;
+                            }
                             case "mode": {
                                 try {
                                     countDown.cancel();

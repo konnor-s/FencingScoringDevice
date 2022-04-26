@@ -45,9 +45,9 @@
 #define SRCLK2 8
 #define RCLK2 9
 
-#define RED 10
-#define GREEN 11
-#define WHITE_1 12
+#define WHITE_1 10 //red is player 2
+#define GREEN 11 //green is player 1
+#define RED 12
 #define WHITE_2 1
 
 
@@ -731,6 +731,7 @@ void parseCommand(String cmd)
       matrix.writeDigitAscii(3,'E');
       matrix.writeDigitAscii(4,'E');
       matrix.writeDisplay();
+      hc06.write("epee\n");
     }
     else if (state->mode == EPEE)
     {
@@ -741,8 +742,9 @@ void parseCommand(String cmd)
       matrix.writeDigitAscii(3,'b');
       matrix.writeDigitAscii(4,'r');
       matrix.writeDisplay();      
+      hc06.write("sabre\n");
     }
-    else
+    else if (state->mode == SABRE)
     {
       state->mode = FOIL;
       resetMatch();
@@ -750,9 +752,10 @@ void parseCommand(String cmd)
       matrix.writeDigitAscii(1,'O');
       matrix.writeDigitAscii(3,'I');
       matrix.writeDigitAscii(4,'L');
-      matrix.writeDisplay();      
+      matrix.writeDisplay();  
+      hc06.write("foil\n");    
     }
-    if (cmd == "b946ff00")
+    else
     {
       hc06.write("mode\n");
     }
