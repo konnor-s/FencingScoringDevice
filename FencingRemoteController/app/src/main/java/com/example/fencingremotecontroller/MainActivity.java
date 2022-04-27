@@ -382,11 +382,12 @@ public class MainActivity extends AppCompatActivity {
                                     seconds = arduinoTimeInt - minutes * 60;
                                     @SuppressLint("DefaultLocale") String min_sec = String.format("%02d:%02d",
                                             minutes, seconds);
-
+                                    Log.e("pause", arduinoTime);
                                     time.setText(min_sec);
-                                    if (minutes != 0 && seconds != 0) {
+                                    if (minutes != 0 || seconds != 0) {
                                         inAction = false;
                                         setPlay();
+                                        Log.e("pause", "Set to Play");
                                     }
                                 } else {
                                     Log.e("msg", "Invalid message");

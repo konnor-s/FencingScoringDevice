@@ -39,7 +39,7 @@
         android:id="@+id/mode"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="@string/Foil"
+        android:text="@string/Epee"
         android:textAlignment="center"
         android:textColor="#000000"
         android:textSize="24sp"
