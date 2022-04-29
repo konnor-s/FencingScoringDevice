@@ -14,7 +14,7 @@
   // Epee:
   // Normal     0    1023   0
   // Valid      510  510    0
-  // Off-target 330  330    330
+  // Off-target 330  330    330  **Not to be implemented
   //
   // Sabre:
   // Normal     0    510    510
@@ -70,16 +70,12 @@ Adafruit_7segment matrix = Adafruit_7segment();
 const unsigned long depress[] = {14000, 2000, 1000}; // foil, epee, sabre
 // lockout is the amount of time after a hit to allow the other person to get a hit, before the round ends
 const unsigned long lockout[] = {300000, 45000, 120000};
-const int validVoltageLow[] = {420, 420, 240}; // its the same voltage for pin A and B on a valid hit
+const int validVoltageLow[] = {420, 420, 200}; // its the same voltage for pin A and B on a valid hit
 const int validVoltageHigh[] = {600, 600, 420};
 
-const int offTargetVoltageLowA[] = { -1, 240, -2}; // sabre doesn't have off target
-const int offTargetVoltageHighA[] = {100, 420, -2};
-const int offTargetVoltageLowB[] = {850, 240, -2};
-const int offTargetVoltageHighB[] = {1025, 420, -2};
 
 #define BUZZER_TIME 2000 // buzzer for 2 seconds
-#define LIGHT_TIME 2000  // lights stay on for 2 additional seconds
+#define LIGHT_TIME 1000  // lights stay on for 1 additional second
 
 int j = 0;
 int currentTime = 0;
@@ -136,7 +132,6 @@ void TimerHandler()
 
 void setup()
 {
-  matrix.begin(0x70);
   // configure ADC
   DIDR0 = 0x0F; //disabling digital inputs for A0-A3
   bitClear(ADCSRA, ADPS0);
@@ -186,14 +181,16 @@ void setup()
  
   matrix.begin(0x70);
   matrix.writeDigitRaw(2, 0x02);
-  matrix.writeDigitNum(0, 0);
-  matrix.writeDigitNum(1, 0);
-  matrix.writeDigitNum(3, 0);
-  matrix.writeDigitNum(4, 0);
-  matrix.writeDisplay();
+  
 
   resetMatch();
 
+  matrix.writeDigitAscii(0,'E');
+  matrix.writeDigitAscii(1,'P');
+  matrix.writeDigitAscii(3,'E');
+  matrix.writeDigitAscii(4,'E');
+  matrix.writeDisplay();
+  
   wdt_enable(WDTO_8S);//watchdog timer. This will reset the program if it gets frozen
 }
 void loop()
@@ -206,31 +203,31 @@ void loop()
       write_time = false;
       //Serial.println("write");
     }
-    if (state->inAction == true)
-    {
-      if (weaponState->lockedOut == false){
-        weaponState->weapon1_B = analogRead(WEAPON_1_PINB);
-        weaponState->weapon2_B = analogRead(WEAPON_2_PINB);
-        weaponState->weapon1_A = analogRead(WEAPON_1_PINA);
-        weaponState->weapon2_A = analogRead(WEAPON_2_PINA);
-
-        testBlades();
-      }
-      if (weaponState->lockedOut == true){      
-        signalHit();
-      }
-
+    
+    if (weaponState->lockedOut == false){
+      weaponState->weapon1_B = analogRead(WEAPON_1_PINB);
+      weaponState->weapon2_B = analogRead(WEAPON_2_PINB);
+      weaponState->weapon1_A = analogRead(WEAPON_1_PINA);
+      weaponState->weapon2_A = analogRead(WEAPON_2_PINA);
+      
+      testBlades();
     }
+    if (weaponState->lockedOut == true){      
+      signalHit();
+    }
+
 
     // Check if there is any IR data to decode
     if (IrReceiver.decode())
     {
       decodeIR();
+     
     }
 
     // Check if there is any bluetooth data to decode
     if (hc06.available()) {
       decodeBluetooth();
+      
     }
     wdt_reset();//reset watchdog timer.
   }
@@ -240,7 +237,7 @@ void decodeIR()
   uint32_t rawCmd = IrReceiver.decodedIRData.decodedRawData;
   uint32_t mask = 0b00000000000000000000000000001111;
   char cmd[9] = {'0','0','0','0','0','0','0','0','\0'};
-  for (int i = 7; i>=0; i++){
+  for (int i = 7; i>=0; i--){
     uint32_t digit = mask & rawCmd;
     char thisChar = (char) digit;
     //convert hex to ascii equivalent
@@ -254,15 +251,16 @@ void decodeIR()
     cmd[i] = thisChar;
     rawCmd = rawCmd >> 4;
   }
- 
-  parseCommand(cmd);
+  if (strcmp(cmd, "00000000")!=0){
+    parseCommand(cmd);
+  }
   IrReceiver.resume();
 }
 void decodeBluetooth()
 {
   char buffer[10];
   int index = 0;
-  while (index < 10 && index > -1)
+  while (index < 10)
   {
     if (hc06.available())
     {
@@ -276,6 +274,7 @@ void decodeBluetooth()
         }
         cmd[index + 1] = '\0'; // cmd is a char array with a \n and \0 as the last 2 chars, to make it a string
         parseCommand(cmd);
+        
         index = 10; // exit
       }
       else
@@ -328,57 +327,43 @@ void testBlades()
     weapon2 = &weaponState->weapon2_B;
     target2 = &weaponState->weapon1_A;
   }
-#ifdef DEBUG_VOLTAGE
-  if (j % 10000000 == 0) {
-    //Serial.print("1A:");
-    //Serial.println(weaponState->weapon1_A);
-    //Serial.print("1B:");
-    //Serial.println(weaponState->weapon1_B);
-    //Serial.print("2A:");
-    //Serial.println(weaponState->weapon2_A);
-    //Serial.print("2B:");
-    //Serial.println(weaponState->weapon2_B);
-  }
-  if (j > 100000000) {
-    j = 0;
-  }
-#endif
 
   // check if lockout time is here
   // A hit has occurred, and the lockout duration has passed.
-  if (((weaponState->validHit1 || weaponState->offTarget1) && ((weaponState->depressTime1 + lockout[state->mode]) < now)) ||
-      ((weaponState->validHit2 || weaponState->offTarget2) && (weaponState->depressTime2 + lockout[state->mode] < now)))
-  {
+  bool hit1 = weaponState->validHit1 || weaponState->offTarget1;
+  bool lockout1 = (weaponState->depressTime1 + lockout[state->mode]) < micros();
+  bool hit2 = weaponState->validHit2 || weaponState->offTarget2;
+  bool lockout2 = (weaponState->depressTime2 + lockout[state->mode]) < micros();
+  
+  if ((hit1 && lockout1) || (hit2 && lockout2)){
     weaponState->lockedOut = true;
   }
 
-  // weapon 1
+  // weapon 1 // ignore if 1 has already hit
   if (weaponState->validHit1 == false && weaponState->offTarget1 == false)
-  { // ignore if 1 has already hit
-    // off target
-    if ((offTargetVoltageLowB[state->mode] < *weapon1) &&
-        (*weapon1 < offTargetVoltageHighB[state->mode]) &&
-        (offTargetVoltageLowA[state->mode] < *target1) &&
-        (*target1 < offTargetVoltageHighA[state->mode]))
+  { 
+    
+    // off target for foil
+    if ((state->mode == FOIL) &&
+       ((800 < *weapon1) && (*weapon1 < 1025)) &&
+       ((-1 < *target1) && (*target1 < 150)))
     {
-
+      
       if (weaponState->depressed1 == false)
       { // if weapon1 just got depressed
         weaponState->depressTime1 = micros();
         weaponState->depressed1 = true;
       }
-      else
-      {
-        if (weaponState->depressTime1 + depress[state->mode] <= micros())
-        { // if it has been depressed for enough time, set as off-target hit
-          weaponState->offTarget1 = true;
-        }
+      else if (weaponState->depressTime1 + depress[state->mode] <= micros())
+      { // if it has been depressed for enough time, set as off-target hit
+        weaponState->offTarget1 = true;
       }
-    } // on target
+    } 
+      // on target
     else if ((validVoltageLow[state->mode] < *weapon1) &&
-             (*weapon1 < validVoltageHigh[state->mode]) &&
-             (validVoltageLow[state->mode] < *target1) &&
-             (*target1 < validVoltageHigh[state->mode]))
+       (*weapon1 < validVoltageHigh[state->mode]) &&
+       (validVoltageLow[state->mode] < *target1) &&
+       (*target1 < validVoltageHigh[state->mode]))
     {
 
       if (weaponState->depressed1 == false)
@@ -386,12 +371,9 @@ void testBlades()
         weaponState->depressTime1 = micros();
         weaponState->depressed1 = true;
       }
-      else
+      else if (weaponState->depressTime1 + depress[state->mode] <= micros())
       {
-        if (weaponState->depressTime1 + depress[state->mode] <= micros())
-        {
-          weaponState->validHit1 = true;
-        }
+        weaponState->validHit1 = true;
       }
     }
     else
@@ -401,16 +383,14 @@ void testBlades()
       weaponState->depressed1 = false;
     }
   }
-  // weapon 2
+  // weapon 2 // ignore if 2 has already hit
   if (weaponState->validHit2 == false && weaponState->offTarget2 == false)
-  { // ignore if 2 has already hit
-    // off target
-    if ((offTargetVoltageLowB[state->mode] < *weapon2) &&
-        (*weapon2 < offTargetVoltageHighB[state->mode]) &&
-        (offTargetVoltageLowA[state->mode] < *target2) &&
-        (*target2 < offTargetVoltageHighA[state->mode]))
+  {
+    // off target for foil
+    if ((state->mode == FOIL) &&
+       ((800 < *weapon2) && (*weapon2 < 1025)) &&
+       ((-1 < *target2) && (*target2 < 150)))
     {
-
       if (weaponState->depressed2 == false)
       { // if weapon 2 just got depressed
         weaponState->depressTime2 = micros();
@@ -459,25 +439,6 @@ void signalHit()
   //Serial.println("signalHit");
   pause(); // sets inAction to false and sends pause command via bluetooth
 
-  // sound buzzer
-#ifdef DEBUG_VOLTAGE
-  //Serial.print("1A:");
-  //Serial.println(weaponState->weapon1_A);
-  //Serial.print("1B:");
-  //Serial.println(weaponState->weapon1_B);
-  //Serial.print("2A:");
-  //Serial.println(weaponState->weapon2_A);
-  //Serial.print("2B:");
-  //Serial.println(weaponState->weapon2_B);
-  //Serial.println(offTargetVoltageLowA[state->mode]);
-  //Serial.println(offTargetVoltageHighA[state->mode]);
-  //Serial.println(offTargetVoltageLowB[state->mode]);
-  //Serial.println(offTargetVoltageHighB[state->mode]);
-  //Serial.println(state->mode);
-#endif
-  if (state->muted == false){
-    digitalWrite(BUZZER, 1);
-  }
   if (weaponState->validHit1 == true)
   {
     if (state->mode == EPEE){
@@ -489,7 +450,7 @@ void signalHit()
     //Serial.println("player 1 scored");
     digitalWrite(GREEN, 1);
   }
-  else if (weaponState->offTarget1 == true)
+  else if (state->mode == FOIL && weaponState->offTarget1 == true)
   {
     //Serial.println("player 1 off-target");
     digitalWrite(WHITE_1, 1);
@@ -505,12 +466,16 @@ void signalHit()
     //Serial.println("player 2 scored");
     digitalWrite(RED, 1);
   }
-  else if (weaponState->offTarget2 == true)
+  else if (state->mode == FOIL && weaponState->offTarget2 == true)
   {
     //Serial.println("player 2 off target");
     digitalWrite(WHITE_2, 1);
   }
 
+  // sound buzzer
+  if (state->muted == false){
+    digitalWrite(BUZZER, 1);
+  }
   delay(BUZZER_TIME); // wait before turning off the buzzer
   digitalWrite(BUZZER, 0);
   delay(LIGHT_TIME); // wait before turning off the lights
@@ -601,50 +566,50 @@ void pause()
 }
 void parseCommand(char cmd[])
 {
-  if (cmd == "reset\n" || cmd == "e619ff00") {
+  if (strcmp(cmd, "reset\n")==0 || strcmp(cmd, "e619ff00")==0) {
     state->inAction = false;
     resetMatch();
-    if (cmd == "e619ff00") {
+    if (strcmp(cmd, "e619ff00")==0) {
       hc06.write("reset\n");
     }
     //Serial.println("reset");
   }
-  else if (state->inAction == false && (cmd == "play\n" || cmd == "bb44ff00") && (currentTime > 0))
+  else if (state->inAction == false && (strcmp(cmd, "play\n")==0 || strcmp(cmd, "bb44ff00")==0) && (currentTime > 0))
   {
     state->inAction = true;
-    if (cmd == "bb44ff00")
+    if (strcmp(cmd, "bb44ff00")==0)
     {
       hc06.write("play\n");
     }
     //Serial.println("play");
   }
-  else if (state->inAction == true && (cmd == "pause\n" || cmd == "bb44ff00"))
+  else if (state->inAction == true && (strcmp(cmd, "pause\n")==0 || strcmp(cmd, "bb44ff00")==0))
   {
     pause();
   }
-  if (cmd == "inc1\n" || cmd == "f708ff00")
+  else if (strcmp(cmd, "inc1\n")==0 || strcmp(cmd, "f708ff00")==0)
   {
     state->score1 += 1;
     // write new score to SCORE1
     //Serial.println("inc1");
     writeScore(state->score1, 1);
-    if (cmd == "f708ff00")
+    if (strcmp(cmd, "f708ff00")==0)
     {
       hc06.write("inc1\n");
     }
   }
-  else if (cmd == "inc2\n" || cmd == "a55aff00")
+  else if (strcmp(cmd, "inc2\n")==0 || strcmp(cmd, "a55aff00")==0)
   {
     state->score2 += 1;
     // write new score to SCORE2
     //Serial.println("inc2");
     writeScore(state->score2, 2);
-    if (cmd == "a55aff00")
+    if (strcmp(cmd, "a55aff00")==0)
     {
       hc06.write("inc2\n");
     }
   }
-  else if (cmd == "dec1\n" || cmd == "bd42ff00")
+  else if (strcmp(cmd, "dec1\n")==0 || strcmp(cmd, "bd42ff00")==0)
   {
     if (state->score1 > 0)
     {
@@ -653,12 +618,12 @@ void parseCommand(char cmd[])
     }
     //Serial.println("dec1");
     writeScore(state->score1, 1);
-    if (cmd == "bd42ff00")
+    if (strcmp(cmd, "bd42ff00")==0)
     {
       hc06.write("dec1\n");
     }
   }
-  else if (cmd == "dec2\n" || cmd == "b54aff00")
+  else if (strcmp(cmd, "dec2\n")==0 || strcmp(cmd, "b54aff00")==0)
   {
     if (state->score2 > 0)
     {
@@ -667,12 +632,12 @@ void parseCommand(char cmd[])
     }
     //Serial.println("dec2");
     writeScore(state->score2, 2);
-    if (cmd == "b54aff00")
+    if (strcmp(cmd, "b54aff00")==0)
     {
       hc06.write("dec2\n");
     }
   }
-  else if (cmd == "mute\n" || cmd == "b847ff00")
+  else if (strcmp(cmd, "mute\n")==0 || strcmp(cmd, "b847ff00")==0)
   {
     if (state->muted == true)
     {
@@ -696,27 +661,27 @@ void parseCommand(char cmd[])
     //Serial.println("mute");
   }
 
-  else if (cmd == "timer1\n" || cmd == "f30cff00")
+  else if (strcmp(cmd, "timer1\n")==0 || strcmp(cmd, "f30cff00")==0)
   {
     currentTime = 60;
     state->inAction = true;
     //Serial.println("timer1");
-    if (cmd == "f30cff00")
+    if (strcmp(cmd, "f30cff00")==0)
     {
       hc06.write("timer1\n");
     }
   }
-  else if (cmd == "timer3\n" || cmd == "a15eff00")
+  else if (strcmp(cmd, "timer3\n")==0 || strcmp(cmd, "a15eff00")==0)
   {
     currentTime = 180;
     state->inAction = true;
     //Serial.println("timer3");
-    if (cmd == "a15eff00")
+    if (strcmp(cmd, "a15eff00")==0)
     {
       hc06.write("timer3\n");
     }
   }
-  else if (cmd == "foil\n")
+  else if (strcmp(cmd, "foil\n")==0)
   {
     state->mode = EPEE;
     resetMatch();
@@ -728,7 +693,7 @@ void parseCommand(char cmd[])
     write_time = false;
     ////Serial.println("foil");
   }
-  else if (cmd == "epee\n")
+  else if (strcmp(cmd, "epee\n")==0)
   {
     state->mode = SABRE;
     resetMatch();
@@ -740,7 +705,7 @@ void parseCommand(char cmd[])
     write_time = false;
     ////Serial.println("epee");
   }
-  else if (cmd == "sabre\n")
+  else if (strcmp(cmd, "sabre\n")==0)
   {
     state->mode = FOIL;
     resetMatch();
@@ -752,7 +717,7 @@ void parseCommand(char cmd[])
     write_time = false;
     ////Serial.println("sabre");
   }
-  else if (cmd == "mode\n" || cmd == "b946ff00")
+  else if (strcmp(cmd, "mode\n")==0 || strcmp(cmd, "b946ff00")==0)
   {
     ////Serial.println("mode");
     if (state->mode == FOIL)
@@ -797,7 +762,7 @@ void parseCommand(char cmd[])
     }
   }
   else {
-    //Serial.println(cmd);
+    //unknown
   }
 }
 /*
