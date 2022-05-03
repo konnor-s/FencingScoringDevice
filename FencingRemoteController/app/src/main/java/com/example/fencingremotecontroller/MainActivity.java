@@ -165,12 +165,16 @@ public class MainActivity extends AppCompatActivity {
                             }
                             case "dec1": {
                                 int newScore = Integer.parseInt(score1.getText().toString()) - 1;
-                                score1.setText(String.valueOf(newScore));
+                                if (newScore >= 0){
+                                    score1.setText(String.valueOf(newScore));
+                                }
                                 break;
                             }
                             case "dec2": {
                                 int newScore = Integer.parseInt(score2.getText().toString()) - 1;
-                                score2.setText(String.valueOf(newScore));
+                                if (newScore >= 0){
+                                    score2.setText(String.valueOf(newScore));
+                                }
                                 break;
                             }
                             case "foil": {
